@@ -34,8 +34,27 @@ canvas{width:100%;height:170px;display:block}
 #lapTable{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
 #lapTable td{padding:5px 8px;border-top:1px solid var(--line)}
 #lapTable tr.best td{color:var(--thr);font-weight:600}#lapTable tr.bad td:nth-child(2){color:var(--warn)}
+#lapTable tr.skip td{color:var(--dim)}
 .wear{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.wear b{display:block;height:100%;background:var(--thr)}
-@media(max-width:700px){.grid{grid-template-columns:1fr}.gear{font-size:110px}}
+#lapTable tr.has-trace{cursor:pointer}#lapTable tr.has-trace:hover td{background:#222a36}#lapTable tr.sel td:first-child{box-shadow:inset 3px 0 var(--drs)}
+.pv-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:12px}
+.pv-head label{color:var(--dim);font-size:13px;display:flex;gap:6px;align-items:center}
+select,button{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;font:14px Barlow,sans-serif;padding:5px 8px;max-width:100%}
+button{cursor:pointer}button:hover,select:hover{border-color:var(--dim)}
+.preview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px}
+#map{height:300px}#spd{height:170px}#ped{height:120px}.pv-charts canvas{cursor:crosshair;touch-action:none}
+.legend{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--dim);font-size:12px;margin:6px 0 2px}
+.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.legend i.dash{border-top-style:dashed}.legend i.dot{width:8px;height:8px;border:0;border-radius:50%}
+#readout{font-variant-numeric:tabular-nums;font-size:13px;color:var(--dim);min-height:20px;margin-top:6px}#readout b{color:var(--text);font-weight:600}
+#pvEmpty,#rvEmpty{color:var(--dim);padding:30px 0;text-align:center}
+.seg-btns{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
+.seg-btns button{border:0;border-radius:0;background:transparent;color:var(--dim)}.seg-btns button+button{border-left:1px solid var(--line)}
+.seg-btns button.on{background:var(--line);color:var(--text)}.seg-btns button:disabled{opacity:.4;cursor:default}
+#rvInfo{font-size:14px;margin-bottom:10px;font-variant-numeric:tabular-nums}#rvInfo b{font-weight:600}#rvInfo .dim{color:var(--dim)}
+#rvMap{height:300px}#rvCum{height:150px}#rvBars{height:130px}
+#rvTop{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.6}#rvTop b{color:var(--text);font-weight:600}
+@media(max-width:700px){.grid{grid-template-columns:1fr}.gear{font-size:110px}.preview{grid-template-columns:1fr}}
 </style>
 </head>
 <body>
@@ -57,11 +76,57 @@ canvas{width:100%;height:170px;display:block}
   <div class="panel wide"><div class="lbl">Last 10 seconds: speed, throttle, brake</div><canvas id="chart"></canvas></div>
   <div class="panel wide">
     <div class="lap">
-      <div><div class="lbl">Lap <span id="lapNum">–</span> · Sector <span id="sec">–</span></div><div class="num" id="cur">–:––.–––</div></div>
+      <div><div class="lbl"><span id="sess"></span>Lap <span id="lapNum">–</span> · Sector <span id="sec">–</span></div><div class="num" id="cur">–:––.–––</div></div>
       <div><div class="lbl">Last lap</div><div class="num" id="lastLap">–:––.–––</div></div>
       <div><div class="lbl">Best lap</div><div class="num" id="bestLap" style="color:var(--thr)">–:––.–––</div></div>
     </div>
     <table id="lapTable"><tbody></tbody></table>
+  </div>
+  <div class="panel wide" id="preview">
+    <div class="pv-head">
+      <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Lap preview</div>
+      <label>Lap <select id="pvLap"></select></label>
+      <label>Compare with <select id="pvCmp"></select></label>
+      <button id="pvFlip" title="Mirror the map if the track looks back-to-front">Flip map</button>
+    </div>
+    <div id="pvEmpty">No lap traces yet. Complete a lap and it will appear here.</div>
+    <div class="preview" id="pvBody" hidden>
+      <div>
+        <canvas id="map"></canvas>
+        <div class="legend"><span><i class="dot" style="background:var(--thr)"></i>Full throttle</span><span><i class="dot" style="background:var(--brk)"></i>Braking</span><span><i class="dot" style="background:#8a95a5"></i>Partial / coasting</span><span id="lgLive" hidden><i class="dot" style="background:var(--drs)"></i>You (live)</span></div>
+      </div>
+      <div class="pv-charts">
+        <div class="lbl">Speed (km/h) over lap distance</div>
+        <canvas id="spd"></canvas>
+        <div class="lbl" style="margin-top:8px">Throttle and brake (%)</div>
+        <canvas id="ped"></canvas>
+        <div class="legend" id="pvLegend"></div>
+        <div id="readout">Hover over the graphs to inspect a point on the lap.</div>
+      </div>
+    </div>
+  </div>
+  <div class="panel wide" id="rival">
+    <div class="pv-head">
+      <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Time vs rival</div>
+      <div class="seg-btns" id="rvWho"><button data-r="ahead" class="on">Car ahead</button><button data-r="behind">Car behind</button></div>
+      <div class="seg-btns" id="rvLapSel"><button data-v="current" class="on">This lap</button><button data-v="last">Last lap</button></div>
+    </div>
+    <div id="rvInfo"></div>
+    <div id="rvEmpty">Waiting for a car directly ahead or behind you in the order.</div>
+    <div class="preview" id="rvBody" hidden>
+      <div>
+        <canvas id="rvMap"></canvas>
+        <div class="legend"><span><i style="border-color:var(--thr)"></i>You gained</span><span><i style="border-color:var(--brk)"></i>You lost</span><span><i style="border-color:#3a4454"></i>No comparison yet</span><span><i class="dot" style="background:var(--drs)"></i>You</span><span><i class="dot" style="background:var(--warn)"></i>Rival</span></div>
+      </div>
+      <div class="pv-charts">
+        <div class="lbl">Net time gained on the rival through the lap (s) · above 0 = you're quicker so far</div>
+        <canvas id="rvCum"></canvas>
+        <div class="lbl" style="margin-top:8px">Gained (+) or lost (−) in each 100 m mini-sector (s)</div>
+        <canvas id="rvBars"></canvas>
+        <div id="rvRead" class="legend" style="min-height:18px"></div>
+        <div id="rvTop"></div>
+      </div>
+    </div>
   </div>
   <div class="panel wide">
     <div class="lbl">Tyres: surface / inner temperature (°C), pressure (psi), brake temperature (°C)</div>
@@ -111,25 +176,288 @@ function render(d) {
   hist.push(d); if (hist.length > MAX) hist.shift();
 }
 
+const SC = { 1: 'SC', 2: 'VSC', 3: 'formation' };
 const fmt = ms => { if (!ms) return '–:––.–––'; const m = Math.floor(ms / 60000), s = ((ms % 60000) / 1000).toFixed(3).padStart(6, '0'); return m + ':' + s; };
 function renderLap(d) {
   if (d.lap) {
     $('lapNum').textContent = d.lap.num; $('sec').textContent = d.lap.sector + 1;
     $('cur').textContent = fmt(d.lap.cur); $('lastLap').textContent = fmt(d.lap.last);
   }
-  const valid = (d.laps || []).filter(l => !l.invalid), best = valid.length ? Math.min(...valid.map(l => l.ms)) : 0;
+  if (d.session) $('sess').textContent = [d.session.track, d.session.type].filter(Boolean).join(' · ') + (d.session.track ? ' · ' : '');
+  // Pit, safety-car and invalid laps don't count towards the best lap or the gap column
+  const clean = l => !l.invalid && !l.pit && !l.sc;
+  const valid = (d.laps || []).filter(clean), best = valid.length ? Math.min(...valid.map(l => l.ms)) : 0;
   $('bestLap').textContent = fmt(best);
+  const tags = l => [l.invalid && 'invalid', l.pit && 'pit', SC[l.sc]].filter(Boolean).map(t => ` (${t})`).join('');
   $('lapTable').tBodies[0].innerHTML = (d.laps || []).slice().reverse().slice(0, 8).map(l =>
-    `<tr class="${l.ms === best ? 'best' : ''} ${l.invalid ? 'bad' : ''}"><td>Lap ${l.lap}</td><td>${fmt(l.ms)}${l.invalid ? ' (invalid)' : ''}</td><td>${best && !l.invalid ? '+' + ((l.ms - best) / 1000).toFixed(3) : ''}</td></tr>`).join('');
+    `<tr data-id="${d.session.uid}_${l.lap}" class="${clean(l) && l.ms === best ? 'best' : ''} ${l.invalid ? 'bad' : ''} ${l.pit || l.sc ? 'skip' : ''} ${pv.index.has(d.session.uid + '_' + l.lap) ? 'has-trace' : ''} ${pv.a && pv.a.id === d.session.uid + '_' + l.lap ? 'sel' : ''}"><td>Lap ${l.lap}</td><td>${fmt(l.ms)}${tags(l)}</td><td>${best && clean(l) ? '+' + ((l.ms - best) / 1000).toFixed(3) : ''}</td></tr>`).join('');
   if (d.wear) d.wear.forEach((w, i) => { $('tw' + i).textContent = 'Wear ' + w + '%'; $('tb' + i).style.width = Math.min(100, w) + '%'; $('tb' + i).style.background = w > 60 ? 'var(--brk)' : w > 40 ? 'var(--warn)' : 'var(--thr)'; });
 }
 const es = new EventSource('/stream');
 es.onmessage = e => { lastMsg = Date.now(); $('status').textContent = 'Live'; $('status').className = 'live'; const d = JSON.parse(e.data);
   if (d.warn) { $('status').textContent = d.warn; $('status').className = ''; return; }
-  render(d); renderLap(d); };
+  render(d); renderLap(d); pvLive(d); rvLive(d); };
 es.onerror = () => { $('status').textContent = 'Server disconnected'; $('status').className = ''; };
 setInterval(() => { if (lastMsg && Date.now() - lastMsg > 2000) { $('status').textContent = 'No data from game'; $('status').className = ''; } }, 1000);
 (function loop() { draw(); requestAnimationFrame(loop); })();
+// ================= Lap preview =================
+const C = { speed: '#e9edf2', thr: '#38d39f', brk: '#ff4d5e', partial: '#8a95a5', grid: '#2a323f', dim: '#8a95a5', live: '#4db8ff', panel: '#1b212b' };
+const pv = { index: new Map(), list: [], a: null, b: null, cache: new Map(), hover: null, follow: true, ver: -1, live: null, flip: false };
+try { pv.flip = localStorage.getItem('f1-flip') === '1'; } catch (e) {}
+const label = m => `Lap ${m.lap} · ${fmt(m.ms)}${m.invalid ? ' (invalid)' : ''}${m.pit ? ' (pit)' : ''}${SC[m.sc] ? ` (${SC[m.sc]})` : ''}`;
+const isClean = m => !m.invalid && !m.pit && !m.sc;
+
+async function loadTrace(id) {
+  if (!id) return null;
+  if (!pv.cache.has(id)) {
+    const r = await fetch('/trace/' + id, { cache: 'no-store' }); if (!r.ok) return null;
+    const t = await r.json(), c = n => t.cols.indexOf(n);
+    const rows = t.samples;
+    t.d = rows.map(r => r[c('dist')]); t.t = rows.map(r => r[c('time')]); t.v = rows.map(r => r[c('speed')]);
+    t.th = rows.map(r => r[c('throttle')]); t.br = rows.map(r => r[c('brake')]);
+    t.x = rows.map(r => r[c('x')]); t.z = rows.map(r => r[c('z')]);
+    t.hasPos = t.x.some(v => v !== null);
+    pv.cache.set(id, t);
+  }
+  return pv.cache.get(id);
+}
+
+// Best clean lap of the same session, other than the selected one
+const autoCompare = a => pv.list.filter(m => m.uid === a.uid && m.id !== a.id && isClean(m)).sort((x, y) => x.ms - y.ms)[0];
+
+async function refreshList() {
+  pv.list = await (await fetch('/traces')).json();
+  pv.index = new Map(pv.list.map(m => [m.id, m]));
+  // A lap redone after a flashback keeps its id: drop cached traces that were deleted or re-recorded
+  for (const [id, t] of pv.cache) { const m = pv.index.get(id); if (!m || m.recordedAt !== t.recordedAt) pv.cache.delete(id); }
+  const bySession = new Map();
+  pv.list.forEach(m => { if (!bySession.has(m.uid)) bySession.set(m.uid, []); bySession.get(m.uid).push(m); });
+  const groups = [...bySession.values()].map(ls => {
+    const f = ls[ls.length - 1], when = new Date(f.recordedAt).toLocaleString([], { month: 'short', day: 'numeric', hour: '2-digit', minute: '2-digit' });
+    return `<optgroup label="${[f.track, f.type, when].filter(Boolean).join(' · ')}">${ls.map(m => `<option value="${m.id}">${label(m)}</option>`).join('')}</optgroup>`;
+  }).join('');
+  $('pvLap').innerHTML = groups;
+  $('pvCmp').innerHTML = `<option value="auto">Best clean lap (same session)</option><option value="">Nothing</option>` + groups;
+  $('pvCmp').value = pv.cmpChoice ?? 'auto';
+  $('pvEmpty').hidden = pv.list.length > 0; $('pvBody').hidden = pv.list.length === 0;
+  const keep = pv.a && pv.index.has(pv.a.id) && !pv.follow ? pv.a.id : pv.list[0] && pv.list[0].id;
+  if (keep) await select(keep);
+}
+
+async function select(id, byUser) {
+  if (byUser) pv.follow = pv.list[0] && id === pv.list[0].id;
+  $('pvLap').value = id;
+  pv.a = await loadTrace(id);
+  const choice = $('pvCmp').value, cm = choice === 'auto' ? pv.a && autoCompare(pv.a) : pv.index.get(choice);
+  pv.b = cm && cm.id !== id ? await loadTrace(cm.id) : null;
+  pv.hover = null; drawPreview();
+}
+
+$('pvLap').onchange = e => select(e.target.value, true);
+$('pvCmp').onchange = e => { pv.cmpChoice = e.target.value; if (pv.a) select(pv.a.id); };
+$('pvFlip').onclick = () => { pv.flip = !pv.flip; try { localStorage.setItem('f1-flip', pv.flip ? '1' : '0'); } catch (e) {} drawPreview(); };
+$('lapTable').onclick = e => { const tr = e.target.closest('tr.has-trace'); if (tr) { select(tr.dataset.id, true); $('preview').scrollIntoView({ behavior: 'smooth', block: 'nearest' }); } };
+
+function pvLive(d) {
+  if (d.traceVer !== undefined && d.traceVer !== pv.ver) { pv.ver = d.traceVer; refreshList(); }
+  const onTrack = pv.a && d.pos && d.session && pv.a.uid === d.session.uid;
+  pv.live = onTrack ? d.pos : null;
+  $('lgLive').hidden = !pv.live;
+  if (pv.live) drawMap();
+}
+
+function sizeCanvas(c) {
+  const dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
+  if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
+  return { g, w, h };
+}
+// index of the sample nearest to distance d (samples are sorted by distance)
+function near(t, d) { let lo = 0, hi = t.d.length - 1; while (lo < hi) { const m = (lo + hi) >> 1; t.d[m] < d ? lo = m + 1 : hi = m; } return lo > 0 && d - t.d[lo - 1] < t.d[lo] - d ? lo - 1 : lo; }
+function timeAt(t, d) { const i = near(t, d); return t.t[i]; }
+
+const PAD = { l: 38, r: 8, t: 8, b: 20 };
+function chart(c, series, yMax, ticks, unit) {
+  const { g, w, h } = sizeCanvas(c), maxD = Math.max(...[pv.a, pv.b].filter(Boolean).map(t => t.d[t.d.length - 1]));
+  const X = d => PAD.l + d / maxD * (w - PAD.l - PAD.r), Y = v => h - PAD.b - v / yMax * (h - PAD.t - PAD.b);
+  g.font = '11px Barlow, sans-serif'; g.fillStyle = C.dim; g.strokeStyle = C.grid; g.lineWidth = 1;
+  ticks.forEach(v => { g.beginPath(); g.moveTo(PAD.l, Y(v)); g.lineTo(w - PAD.r, Y(v)); g.stroke(); g.textAlign = 'right'; g.fillText(v + unit, PAD.l - 5, Y(v) + 4); });
+  g.textAlign = 'center';
+  const step = maxD > 4000 ? 1000 : 500;
+  for (let d = 0; d <= maxD; d += step) g.fillText(d ? (d / 1000) + ' km' : '0', Math.min(w - PAD.r - 14, X(d)), h - 5);
+  series.forEach(({ t, key, color, dash, alpha }) => {
+    if (!t) return;
+    g.save(); g.strokeStyle = color; g.globalAlpha = alpha || 1; g.lineWidth = dash ? 1.5 : 2; g.setLineDash(dash ? [5, 4] : []); g.lineJoin = 'round';
+    g.beginPath(); t.d.forEach((d, i) => { const x = X(d), y = Y(t[key][i]); i ? g.lineTo(x, y) : g.moveTo(x, y); }); g.stroke(); g.restore();
+  });
+  if (pv.hover !== null) {
+    const x = X(pv.hover); g.strokeStyle = C.dim; g.lineWidth = 1; g.beginPath(); g.moveTo(x, PAD.t); g.lineTo(x, h - PAD.b); g.stroke();
+    series.forEach(({ t, key, color }) => { if (!t) return; const i = near(t, pv.hover);
+      g.beginPath(); g.arc(X(t.d[i]), Y(t[key][i]), 4, 0, 7); g.fillStyle = color; g.fill(); g.lineWidth = 2; g.strokeStyle = C.panel; g.stroke(); });
+  }
+  c._x = { X, maxD };
+}
+
+function drawMap() {
+  const c = $('map'), { g, w, h } = sizeCanvas(c), a = pv.a;
+  if (!a || !a.hasPos) { g.fillStyle = C.dim; g.font = '13px Barlow, sans-serif'; g.textAlign = 'center'; g.fillText('No position data for this lap', w / 2, h / 2); return; }
+  const pts = [a, pv.b].filter(t => t && t.hasPos);
+  const xs = pts.flatMap(t => t.x.filter(v => v !== null)), zs = pts.flatMap(t => t.z.filter(v => v !== null));
+  const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
+  const k = Math.min((w - 24) / (maxX - minX || 1), (h - 24) / (maxZ - minZ || 1));
+  const ox = (w - (maxX - minX) * k) / 2, oy = (h - (maxZ - minZ) * k) / 2;
+  const P = (x, z) => [pv.flip ? w - (ox + (x - minX) * k) : ox + (x - minX) * k, oy + (maxZ - z) * k];
+  // comparison lap as a wide, quiet outline underneath
+  if (pv.b && pv.b.hasPos) { g.strokeStyle = '#3a4454'; g.lineWidth = 7; g.lineJoin = g.lineCap = 'round'; g.beginPath();
+    pv.b.x.forEach((x, i) => { if (x === null) return; const [px, py] = P(x, pv.b.z[i]); i ? g.lineTo(px, py) : g.moveTo(px, py); }); g.stroke(); }
+  // selected lap, coloured by what the pedals were doing
+  g.lineWidth = 3; g.lineCap = 'round';
+  for (let i = 1; i < a.x.length; i++) {
+    if (a.x[i] === null || a.x[i - 1] === null) continue;
+    g.strokeStyle = a.br[i] > 10 ? C.brk : a.th[i] >= 95 ? C.thr : C.partial;
+    const [x1, y1] = P(a.x[i - 1], a.z[i - 1]), [x2, y2] = P(a.x[i], a.z[i]);
+    g.beginPath(); g.moveTo(x1, y1); g.lineTo(x2, y2); g.stroke();
+  }
+  const [sx, sy] = P(a.x[0], a.z[0]); g.fillStyle = C.speed; g.fillRect(sx - 1.5, sy - 7, 3, 14); // start/finish
+  const dot = (x, z, fill, r) => { const [px, py] = P(x, z); g.beginPath(); g.arc(px, py, r, 0, 7); g.fillStyle = fill; g.fill(); g.lineWidth = 2; g.strokeStyle = C.panel; g.stroke(); };
+  if (pv.hover !== null) {
+    if (pv.b && pv.b.hasPos) { const j = near(pv.b, pv.hover); if (pv.b.x[j] !== null) { const [px, py] = P(pv.b.x[j], pv.b.z[j]); g.beginPath(); g.arc(px, py, 5, 0, 7); g.lineWidth = 2; g.strokeStyle = C.dim; g.stroke(); } }
+    const i = near(a, pv.hover); if (a.x[i] !== null) dot(a.x[i], a.z[i], C.speed, 5);
+  }
+  if (pv.live) dot(pv.live.x, pv.live.z, C.live, 6);
+}
+
+function drawPreview() {
+  if (!pv.a) return;
+  const a = pv.a, b = pv.b, am = pv.index.get(a.id), bm = b && pv.index.get(b.id);
+  const top = Math.max(300, ...a.v, ...(b ? b.v : [])), yMax = Math.ceil(top / 50) * 50;
+  chart($('spd'), [{ t: b, key: 'v', color: C.dim, dash: true }, { t: a, key: 'v', color: C.speed }], yMax, [0, 100, 200, 300].filter(v => v <= yMax), '');
+  chart($('ped'), [{ t: b, key: 'th', color: C.thr, dash: true, alpha: .55 }, { t: b, key: 'br', color: C.brk, dash: true, alpha: .55 },
+    { t: a, key: 'th', color: C.thr }, { t: a, key: 'br', color: C.brk }], 100, [0, 50, 100], '');
+  $('pvLegend').innerHTML = `<span><i style="border-color:${C.speed}"></i>${am ? label(am) : ''}</span>` +
+    (bm ? `<span><i class="dash" style="border-color:${C.dim}"></i>${label(bm)}</span>` : '') +
+    `<span><i style="border-color:${C.thr}"></i>Throttle</span><span><i style="border-color:${C.brk}"></i>Brake</span>`;
+  drawMap();
+  if (pv.hover === null) { $('readout').textContent = 'Hover over the graphs to inspect a point on the lap.'; return; }
+  const i = near(a, pv.hover), parts = [`<b>${(a.d[i] / 1000).toFixed(2)} km</b>`, `<b>${a.v[i]}</b> km/h`, `throttle <b>${a.th[i]}%</b>`, `brake <b>${a.br[i]}%</b>`];
+  if (b) { const j = near(b, pv.hover), dt = (timeAt(a, pv.hover) - timeAt(b, pv.hover)) / 1000;
+    parts.push(`vs compare: <b>${b.v[j]}</b> km/h`, `gap <b style="color:${dt > 0 ? C.brk : C.thr}">${dt > 0 ? '+' : ''}${dt.toFixed(3)} s</b>`); }
+  $('readout').innerHTML = parts.join(' · ');
+}
+
+['spd', 'ped'].forEach(id => {
+  const c = $(id);
+  c.addEventListener('pointermove', e => { if (!c._x) return; const r = c.getBoundingClientRect();
+    pv.hover = Math.max(0, Math.min(c._x.maxD, (e.clientX - r.left - PAD.l) / (r.width - PAD.l - PAD.r) * c._x.maxD)); drawPreview(); });
+  c.addEventListener('pointerleave', () => { pv.hover = null; drawPreview(); });
+});
+addEventListener('resize', () => { drawPreview(); drawRival(); });
+refreshList();
+
+// ================= Time vs rival =================
+const rv = { who: 'ahead', view: 'current', d: null, shape: new Map(), uid: null, hover: null, seeded: null };
+const secs = ms => (ms >= 0 ? '+' : '−') + (Math.abs(ms) / 1000).toFixed(3);
+function mix(a, b, t) { const p = h => [1, 3, 5].map(i => parseInt(h.slice(i, i + 2), 16)); const x = p(a), y = p(b);
+  return '#' + x.map((v, i) => Math.round(v + (y[i] - v) * t).toString(16).padStart(2, '0')).join(''); }
+// diverging: grey near zero, deeper green/red the more time changed hands in that mini-sector
+const gainColor = g => g == null ? '#3a4454' : Math.abs(g) < 3 ? '#6b7585' : mix('#6b7585', g > 0 ? C.thr : C.brk, Math.min(1, .35 + Math.abs(g) / 60));
+
+document.querySelectorAll('#rvWho button').forEach(b => b.onclick = () => { rv.who = b.dataset.r; drawRival(); });
+document.querySelectorAll('#rvLapSel button').forEach(b => b.onclick = () => { rv.view = b.dataset.v; drawRival(); });
+
+function rvLive(d) {
+  if (!d.session) return;
+  if (d.session.uid !== rv.uid) { rv.uid = d.session.uid; rv.shape = new Map(); rv.seeded = null; }
+  // Track outline for this session: your own positions bucketed every 10 m of lap distance
+  if (d.pos && d.lap && d.lap.dist >= 0) rv.shape.set(Math.floor(d.lap.dist / 10), [d.pos.x, d.pos.z]);
+  if (pv.a && pv.a.uid === rv.uid && pv.a.hasPos && rv.seeded !== pv.a.id) { // fill gaps from a saved lap of this session
+    rv.seeded = pv.a.id;
+    pv.a.d.forEach((dd, i) => { const k = Math.floor(dd / 10); if (!rv.shape.has(k) && pv.a.x[i] !== null) rv.shape.set(k, [pv.a.x[i], pv.a.z[i]]); });
+  }
+  rv.d = d; drawRival();
+}
+
+function pickRival() {
+  const r = rv.d && rv.d.rivals; if (!r) return { r: null };
+  let who = rv.who; if (!r[who]) who = who === 'ahead' ? 'behind' : 'ahead'; // P1 has nobody ahead, last place nobody behind
+  return { r: r[who], who, forced: who !== rv.who, has: { ahead: !!r.ahead, behind: !!r.behind } };
+}
+
+function drawRival() {
+  const { r, who, forced, has } = pickRival();
+  document.querySelectorAll('#rvWho button').forEach(b => { b.classList.toggle('on', b.dataset.r === (who || rv.who)); b.disabled = has ? !has[b.dataset.r] : false; });
+  document.querySelectorAll('#rvLapSel button').forEach(b => b.classList.toggle('on', b.dataset.v === rv.view));
+  $('rvEmpty').hidden = !!r; $('rvBody').hidden = !r;
+  if (!r) { $('rvInfo').textContent = ''; return; }
+  const cmp = r[rv.view], g = cmp ? cmp.gained : [], seg = rv.d.seg;
+  const name = r.driver && r.driver.name ? `${r.driver.name}${r.driver.number ? ' #' + r.driver.number : ''}` : `Car ${r.idx + 1}`;
+  const net = g.reduce((a, v) => a + (v || 0), 0), known = g.filter(v => v != null).length;
+  const gap = r.gap ? ` · <span class="dim">gap</span> <b>${(r.gap / 1000).toFixed(3)} s</b>` : '';
+  const lapTxt = !cmp ? '<span class="dim">no lap to compare yet</span>' :
+    `<span class="dim">${rv.view === 'current' ? 'this lap so far' : 'last lap (' + cmp.lap + ')'}${cmp.rivalLap !== cmp.lap ? ` vs their lap ${cmp.rivalLap}` : ''}:</span> ` +
+    (known ? `<b style="color:${net >= 0 ? C.thr : C.brk}">${secs(net)} s</b> ${net >= 0 ? 'gained' : 'lost'}` : '<span class="dim">no mini-sectors yet</span>');
+  $('rvInfo').innerHTML = `<b>P${r.pos} · ${name}</b> <span class="dim">(${who === 'ahead' ? 'car ahead' : 'car behind'}${forced ? ', nobody ' + rv.who + ' of you' : ''})</span>${gap} · ${lapTxt}`;
+
+  // --- map ---
+  const c = $('rvMap'), { g: x, w, h } = sizeCanvas(c), keys = [...rv.shape.keys()].sort((a, b) => a - b);
+  if (keys.length < 20) { x.fillStyle = C.dim; x.font = '13px Barlow, sans-serif'; x.textAlign = 'center'; x.fillText('Drawing the track as you drive…', w / 2, h / 2); }
+  else {
+    const pts = keys.map(k => [k * 10, ...rv.shape.get(k)]), xs = pts.map(p => p[1]), zs = pts.map(p => p[2]);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
+    const k = Math.min((w - 24) / (maxX - minX || 1), (h - 24) / (maxZ - minZ || 1)), ox = (w - (maxX - minX) * k) / 2, oy = (h - (maxZ - minZ) * k) / 2;
+    const P = (px, pz) => [pv.flip ? w - (ox + (px - minX) * k) : ox + (px - minX) * k, oy + (maxZ - pz) * k];
+    const path = (from, to) => { x.beginPath(); let first = true;
+      for (const p of pts) { if (p[0] < from || p[0] > to) continue; const [a, b] = P(p[1], p[2]); first ? x.moveTo(a, b) : x.lineTo(a, b); first = false; }
+      x.stroke(); };
+    x.lineCap = x.lineJoin = 'round';
+    x.strokeStyle = '#2e3643'; x.lineWidth = 9; path(-1, Infinity);
+    x.lineWidth = 5; g.forEach((v, i) => { x.strokeStyle = gainColor(v); path(i * seg - 10, (i + 1) * seg); });
+    if (rv.hover !== null) { x.strokeStyle = C.speed; x.lineWidth = 2; path(rv.hover * seg - 10, (rv.hover + 1) * seg); }
+    const dot = (p, fill) => { if (!p) return; const [a, b] = P(p.x, p.z); x.beginPath(); x.arc(a, b, 6, 0, 7); x.fillStyle = fill; x.fill(); x.lineWidth = 2; x.strokeStyle = C.panel; x.stroke(); };
+    dot(r.xz, '#ffb020'); dot(rv.d.pos, C.live);
+  }
+
+  // --- charts ---
+  const n = Math.max(g.length, 1), maxG = Math.max(20, ...g.map(v => Math.abs(v || 0)));
+  let run = 0; const cum = g.map(v => (run += v || 0, v == null ? null : run)), maxC = Math.max(50, ...cum.map(v => Math.abs(v || 0)));
+  const axes = (cv, max) => {
+    const { g: q, w, h } = sizeCanvas(cv), X = i => PAD.l + i / n * (w - PAD.l - PAD.r), Y = v => PAD.t + (1 - (v / max + 1) / 2) * (h - PAD.t - PAD.b);
+    q.font = '11px Barlow, sans-serif'; q.fillStyle = C.dim; q.textAlign = 'right';
+    [-max, 0, max].forEach(v => { q.strokeStyle = v ? C.grid : '#56606f'; q.lineWidth = 1; q.beginPath(); q.moveTo(PAD.l, Y(v)); q.lineTo(w - PAD.r, Y(v)); q.stroke();
+      q.fillText(v ? secs(v).replace(/0+$/, '').replace(/\.$/, '') : '0', PAD.l - 5, Y(v) + 4); });
+    q.textAlign = 'center'; const step = n * seg > 4000 ? 1000 : 500;
+    for (let dd = 0; dd <= n * seg; dd += step) q.fillText(dd ? dd / 1000 + ' km' : '0', Math.min(w - PAD.r - 14, X(dd / seg)), h - 5);
+    cv._n = n; return { q, X, Y };
+  };
+  { const { q, X, Y } = axes($('rvCum'), maxC);
+    q.strokeStyle = C.speed; q.lineWidth = 2; q.lineJoin = 'round'; q.beginPath(); let started = false;
+    cum.forEach((v, i) => { if (v == null) { started = false; return; }
+      if (!started) { q.moveTo(X(i), Y(v - g[i])); started = true; } q.lineTo(X(i + 1), Y(v)); });
+    q.stroke();
+    if (rv.hover !== null && cum[rv.hover] != null) { q.beginPath(); q.arc(X(rv.hover + 1), Y(cum[rv.hover]), 4, 0, 7); q.fillStyle = C.speed; q.fill(); q.lineWidth = 2; q.strokeStyle = C.panel; q.stroke(); } }
+  { const { q, X, Y } = axes($('rvBars'), maxG);
+    g.forEach((v, i) => { if (v == null) return; const x0 = X(i) + 1, bw = Math.max(1, X(i + 1) - X(i) - 2), y0 = Y(0), y1 = Y(v);
+      q.globalAlpha = rv.hover === null || rv.hover === i ? 1 : .45; q.fillStyle = v >= 0 ? C.thr : C.brk;
+      q.beginPath(); q.roundRect(x0, Math.min(y0, y1), bw, Math.max(1, Math.abs(y1 - y0)), 2); q.fill(); });
+    q.globalAlpha = 1; }
+
+  // --- readout + biggest swings ---
+  const km = i => `${(i * seg / 1000).toFixed(1)}–${((i + 1) * seg / 1000).toFixed(1)} km`;
+  $('rvRead').innerHTML = rv.hover !== null && g[rv.hover] != null
+    ? `<span><b style="color:var(--text)">${km(rv.hover)}</b>: ${secs(g[rv.hover])} s in this mini-sector · net ${secs(cum[rv.hover])} s so far</span>`
+    : '<span>Hover over the graphs to see a mini-sector on the map.</span>';
+  const idx = g.map((v, i) => [v, i]).filter(p => p[0] != null);
+  const best = idx.filter(p => p[0] > 0).sort((a, b) => b[0] - a[0]).slice(0, 3), worst = idx.filter(p => p[0] < 0).sort((a, b) => a[0] - b[0]).slice(0, 3);
+  const list = ps => ps.length ? ps.map(([v, i]) => `<b>${km(i)}</b> (${secs(v)} s)`).join(', ') : '–';
+  $('rvTop').innerHTML = known ? `Most time gained: ${list(best)}<br>Most time lost: ${list(worst)}` : '';
+}
+
+['rvCum', 'rvBars'].forEach(id => {
+  const c = $(id);
+  c.addEventListener('pointermove', e => { if (!c._n) return; const r = c.getBoundingClientRect();
+    const i = Math.floor((e.clientX - r.left - PAD.l) / (r.width - PAD.l - PAD.r) * c._n); rv.hover = i >= 0 && i < c._n ? i : null; drawRival(); });
+  c.addEventListener('pointerleave', () => { rv.hover = null; drawRival(); });
+});
 </script>
 </body>
 </html>

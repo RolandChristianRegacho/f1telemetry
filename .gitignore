@@ -1,0 +1,6 @@
+# Files written by `node server.js --demo`
+traces-demo/
+laps-demo.csv
+
+# Copies of files shared in the Claude app
+Claude outputs/
