@@ -4,6 +4,7 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 <title>F1 25 Telemetry</title>
+<script>try{var t=localStorage.getItem('f1-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
 <link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
 <style>
 :root{--bg:#12161d;--panel:#1b212b;--line:#2a323f;--text:#e9edf2;--dim:#8a95a5;--thr:#38d39f;--brk:#ff4d5e;--drs:#4db8ff;--warn:#ffb020}
@@ -55,12 +56,64 @@ button{cursor:pointer}button:hover,select:hover{border-color:var(--dim)}
 #rvMap{height:300px}#rvCum{height:150px}#rvBars{height:130px}
 #rvTop{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.6}#rvTop b{color:var(--text);font-weight:600}
 @media(max-width:700px){.grid{grid-template-columns:1fr}.gear{font-size:110px}.preview{grid-template-columns:1fr}}
+
+
+/* ---- themes (colours only, switched by the header toggle) ---- */
+:root{--g1:#38d39f;--g2:#4db8ff;--glow:none;--hero:var(--text)}
+html[data-theme="rb"]{--bg:#0a1030;--panel:#121a47;--line:#27336f;--text:#f1f3ff;--dim:#8f9acf;--thr:#ffc906;--brk:#ff2d5f;--drs:#5ea2ff;--warn:#ff8a3d;
+  --g1:#ffc906;--g2:#db0a40;--hero:#ffc906;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(219,10,64,.24),transparent 70%)}
+html[data-theme="merc"]{--bg:#08090b;--panel:#14171a;--line:#2a3036;--text:#f2f4f5;--dim:#8d969e;--thr:#00d2be;--brk:#ff4d5e;--drs:#c9d0d6;--warn:#ffb020;
+  --g1:#00d2be;--g2:#c9d0d6;--hero:#00d2be;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(0,210,190,.16),transparent 70%)}
+body{background:var(--glow),var(--bg)}
+h1{padding-bottom:6px;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,var(--g1),var(--g2) 40%,transparent 85%) 1}
+.gear{color:var(--hero)}
+html[data-theme="rb"] .panel,html[data-theme="merc"] .panel{box-shadow:inset 0 2px 0 var(--g1)}
+#lapTable tr.has-trace:hover td{background:color-mix(in srgb,var(--text) 8%,transparent)}
+#themeSel button{padding:2px 10px;font-size:13px}
+/* ---- one-screen layout ---- */
+[hidden]{display:none!important}
+body{max-width:none;margin:0;padding:10px 12px;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:14px}
+h1{font-size:18px;margin:0 0 6px}
+#revs{margin-bottom:8px}#revs i{height:8px}
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:270px minmax(0,1fr) minmax(0,1.9fr);gap:10px}
+.col{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
+.panel{padding:10px;min-height:0;min-width:0}
+.cv{position:relative;min-height:50px;min-width:0}
+.cv>canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
+.scroll{flex:1;min-height:0;overflow:auto}
+.colA .big{flex:none;flex-wrap:wrap;gap:0 16px;align-items:flex-end}
+.colA .gear{font-size:92px}.colA .num{font-size:44px}.colA .big .num[style]{font-size:30px!important}
+.colA>.panel:nth-child(2){flex:none}
+.pedal{height:10px;margin:2px 0 8px}
+.tyresp{flex:1 1 0;display:flex;flex-direction:column}
+.tyresp .tyres{flex:1;min-height:0;gap:8px;align-content:stretch}
+.tyre{padding:6px;min-height:0;display:flex;flex-direction:column;justify-content:center}.tyre .t{font-size:20px}.tyre small{font-size:12px}
+.lapp{flex:0 1 330px;display:flex;flex-direction:column}
+.lap{gap:8px 24px;margin-bottom:6px}.lap .num{font-size:36px}
+#lapTable td{padding:3px 8px}
+.chartp{flex:1 1 0;display:flex;flex-direction:column}.chartp .cv{flex:1}
+#rival,#preview{display:flex;flex-direction:column}
+#rival{flex:1.25 1 0}#preview{flex:1 1 0}
+.pv-head{margin-bottom:6px;gap:6px 14px}
+.preview{flex:1;min-height:0}
+.preview>div{display:flex;flex-direction:column;min-height:0}
+#rvInfo{margin-bottom:6px}
+#readout{min-height:0;margin-top:2px}#rvTop{margin-top:2px;line-height:1.4}
+#pvEmpty,#rvEmpty{padding:14px 0}
+@media(max-width:1100px),(max-height:620px){
+  body{height:auto;overflow:auto}
+  .grid{display:flex;flex-direction:column}.col{display:contents}
+  .panel,.tyresp,.lapp,.chartp,#rival,#preview{flex:none}
+  .preview{flex:none;grid-template-columns:1fr}.cv{flex:none!important;height:170px}
+  .tyresp .tyres{flex:none}
+}
 </style>
 </head>
 <body>
-<h1>F1 25 Telemetry <span id="status">Waiting for data…</span></h1>
+<h1>F1 25 Telemetry <span class="seg-btns" id="themeSel"><button data-t="default">Default</button><button data-t="rb">Red Bull</button><button data-t="merc">Mercedes</button></span> <span id="status">Waiting for data…</span></h1>
 <div id="revs"></div>
 <div class="grid">
+<div class="col colA">
   <div class="panel big">
     <div><div class="lbl">Gear</div><div class="gear" id="gear">N</div></div>
     <div><div class="lbl">Speed</div><div><span class="num" id="speed">0</span><span class="unit">km/h</span></div>
@@ -73,39 +126,24 @@ button{cursor:pointer}button:hover,select:hover{border-color:var(--dim)}
     <div class="lbl">Steering <span id="strV"></span></div><div class="pedal"><b id="str" style="background:var(--dim)"></b></div>
     <div class="lbl">Engine temperature: <span id="eng">–</span> °C</div>
   </div>
-  <div class="panel wide"><div class="lbl">Last 10 seconds: speed, throttle, brake</div><canvas id="chart"></canvas></div>
-  <div class="panel wide">
+  <div class="panel tyresp">
+    <div class="lbl">Tyres: surface / inner temperature (°C), pressure (psi), brake temperature (°C)</div>
+    <div class="tyres" id="tyres"></div>
+  </div>
+</div>
+<div class="col colB">
+  <div class="panel lapp">
     <div class="lap">
       <div><div class="lbl"><span id="sess"></span>Lap <span id="lapNum">–</span> · Sector <span id="sec">–</span></div><div class="num" id="cur">–:––.–––</div></div>
       <div><div class="lbl">Last lap</div><div class="num" id="lastLap">–:––.–––</div></div>
       <div><div class="lbl">Best lap</div><div class="num" id="bestLap" style="color:var(--thr)">–:––.–––</div></div>
     </div>
-    <table id="lapTable"><tbody></tbody></table>
+    <div class="scroll"><table id="lapTable"><tbody></tbody></table></div>
   </div>
-  <div class="panel wide" id="preview">
-    <div class="pv-head">
-      <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Lap preview</div>
-      <label>Lap <select id="pvLap"></select></label>
-      <label>Compare with <select id="pvCmp"></select></label>
-      <button id="pvFlip" title="Mirror the map if the track looks back-to-front">Flip map</button>
-    </div>
-    <div id="pvEmpty">No lap traces yet. Complete a lap and it will appear here.</div>
-    <div class="preview" id="pvBody" hidden>
-      <div>
-        <canvas id="map"></canvas>
-        <div class="legend"><span><i class="dot" style="background:var(--thr)"></i>Full throttle</span><span><i class="dot" style="background:var(--brk)"></i>Braking</span><span><i class="dot" style="background:#8a95a5"></i>Partial / coasting</span><span id="lgLive" hidden><i class="dot" style="background:var(--drs)"></i>You (live)</span></div>
-      </div>
-      <div class="pv-charts">
-        <div class="lbl">Speed (km/h) over lap distance</div>
-        <canvas id="spd"></canvas>
-        <div class="lbl" style="margin-top:8px">Throttle and brake (%)</div>
-        <canvas id="ped"></canvas>
-        <div class="legend" id="pvLegend"></div>
-        <div id="readout">Hover over the graphs to inspect a point on the lap.</div>
-      </div>
-    </div>
-  </div>
-  <div class="panel wide" id="rival">
+  <div class="panel chartp"><div class="lbl">Last 10 seconds: speed, throttle, brake</div><div class="cv" style="flex:1"><canvas id="chart"></canvas></div></div>
+</div>
+<div class="col colC">
+  <div class="panel" id="rival">
     <div class="pv-head">
       <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Time vs rival</div>
       <div class="seg-btns" id="rvWho"><button data-r="ahead" class="on">Car ahead</button><button data-r="behind">Car behind</button></div>
@@ -115,26 +153,47 @@ button{cursor:pointer}button:hover,select:hover{border-color:var(--dim)}
     <div id="rvEmpty">Waiting for a car directly ahead or behind you in the order.</div>
     <div class="preview" id="rvBody" hidden>
       <div>
-        <canvas id="rvMap"></canvas>
+        <div class="cv" style="flex:1"><canvas id="rvMap"></canvas></div>
         <div class="legend"><span><i style="border-color:var(--thr)"></i>You gained</span><span><i style="border-color:var(--brk)"></i>You lost</span><span><i style="border-color:#3a4454"></i>No comparison yet</span><span><i class="dot" style="background:var(--drs)"></i>You</span><span><i class="dot" style="background:var(--warn)"></i>Rival</span></div>
       </div>
       <div class="pv-charts">
         <div class="lbl">Net time gained on the rival through the lap (s) · above 0 = you're quicker so far</div>
-        <canvas id="rvCum"></canvas>
+        <div class="cv" style="flex:3"><canvas id="rvCum"></canvas></div>
         <div class="lbl" style="margin-top:8px">Gained (+) or lost (−) in each 100 m mini-sector (s)</div>
-        <canvas id="rvBars"></canvas>
+        <div class="cv" style="flex:2"><canvas id="rvBars"></canvas></div>
         <div id="rvRead" class="legend" style="min-height:18px"></div>
         <div id="rvTop"></div>
       </div>
     </div>
   </div>
-  <div class="panel wide">
-    <div class="lbl">Tyres: surface / inner temperature (°C), pressure (psi), brake temperature (°C)</div>
-    <div class="tyres" id="tyres"></div>
+  <div class="panel" id="preview">
+    <div class="pv-head">
+      <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Lap preview</div>
+      <label>Lap <select id="pvLap"></select></label>
+      <label>Compare with <select id="pvCmp"></select></label>
+      <button id="pvFlip" title="Mirror the map if the track looks back-to-front">Flip map</button>
+    </div>
+    <div id="pvEmpty">No lap traces yet. Complete a lap and it will appear here.</div>
+    <div class="preview" id="pvBody" hidden>
+      <div>
+        <div class="cv" style="flex:1"><canvas id="map"></canvas></div>
+        <div class="legend"><span><i class="dot" style="background:var(--thr)"></i>Full throttle</span><span><i class="dot" style="background:var(--brk)"></i>Braking</span><span><i class="dot" style="background:#8a95a5"></i>Partial / coasting</span><span id="lgLive" hidden><i class="dot" style="background:var(--drs)"></i>You (live)</span></div>
+      </div>
+      <div class="pv-charts">
+        <div class="lbl">Speed (km/h) over lap distance</div>
+        <div class="cv" style="flex:3"><canvas id="spd"></canvas></div>
+        <div class="lbl" style="margin-top:8px">Throttle and brake (%)</div>
+        <div class="cv" style="flex:2"><canvas id="ped"></canvas></div>
+        <div class="legend" id="pvLegend"></div>
+        <div id="readout">Hover over the graphs to inspect a point on the lap.</div>
+      </div>
+    </div>
   </div>
+</div>
 </div>
 <script>
 const $ = id => document.getElementById(id);
+const T = { text: '#e9edf2', thr: '#38d39f', brk: '#ff4d5e', grid: '#2a323f' }; // live-chart colours, refreshed by readTheme()
 const revs = $('revs'); for (let i = 0; i < 15; i++) revs.appendChild(document.createElement('i'));
 const names = ['Rear left', 'Rear right', 'Front left', 'Front right'], order = [2, 3, 0, 1]; // show front row first
 $('tyres').innerHTML = order.map(i => `<div class="tyre"><small>${names[i]}</small><div class="t" id="ty${i}">–</div><small id="tp${i}"></small><small id="tw${i}">Wear –</small><div class="wear"><b id="tb${i}" style="width:0"></b></div></div>`).join('');
@@ -145,14 +204,14 @@ function draw() {
   const c = $('chart'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
   c.width = w * dpr; c.height = h * dpr;
   const g = c.getContext('2d'); g.scale(dpr, dpr);
-  g.strokeStyle = '#2a323f'; g.lineWidth = 1;
+  g.strokeStyle = T.grid; g.lineWidth = 1;
   for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(0, h * i / 4); g.lineTo(w, h * i / 4); g.stroke(); }
   const line = (key, max, color) => {
     g.strokeStyle = color; g.lineWidth = 2; g.beginPath();
     hist.forEach((d, i) => { const x = i / (MAX - 1) * w, y = h - Math.min(1, d[key] / max) * (h - 4) - 2; i ? g.lineTo(x, y) : g.moveTo(x, y); });
     g.stroke();
   };
-  line('speed', 350, '#e9edf2'); line('throttle', 1, '#38d39f'); line('brake', 1, '#ff4d5e');
+  line('speed', 350, T.text); line('throttle', 1, T.thr); line('brake', 1, T.brk);
 }
 
 function render(d) {
@@ -458,6 +517,26 @@ function drawRival() {
     const i = Math.floor((e.clientX - r.left - PAD.l) / (r.width - PAD.l - PAD.r) * c._n); rv.hover = i >= 0 && i < c._n ? i : null; drawRival(); });
   c.addEventListener('pointerleave', () => { rv.hover = null; drawRival(); });
 });
+
+// Re-draw the canvas charts when the layout changes size (the cells now follow the window)
+{ let q = 0; const ro = new ResizeObserver(() => { if (q) return; q = requestAnimationFrame(() => { q = 0; drawPreview(); drawRival(); }); });
+  document.querySelectorAll('.cv').forEach(el => ro.observe(el)); }
+
+// ================= Themes =================
+function readTheme() {
+  const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
+  Object.assign(T, { text: v('--text'), thr: v('--thr'), brk: v('--brk'), grid: v('--line') });
+  Object.assign(C, { speed: v('--text'), thr: v('--thr'), brk: v('--brk'), partial: v('--dim'), grid: v('--line'), dim: v('--dim'), live: v('--drs'), panel: v('--panel') });
+  const cur = document.documentElement.dataset.theme || 'default';
+  document.querySelectorAll('#themeSel button').forEach(b => b.classList.toggle('on', b.dataset.t === cur));
+  drawPreview(); drawRival();
+}
+document.querySelectorAll('#themeSel button').forEach(b => b.onclick = () => {
+  document.documentElement.dataset.theme = b.dataset.t;
+  try { localStorage.setItem('f1-theme', b.dataset.t); } catch (e) {}
+  readTheme();
+});
+readTheme();
 </script>
 </body>
 </html>
