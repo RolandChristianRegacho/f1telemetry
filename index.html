@@ -64,12 +64,20 @@ html[data-theme="rb"]{--bg:#0a1030;--panel:#121a47;--line:#27336f;--text:#f1f3ff
   --g1:#ffc906;--g2:#db0a40;--hero:#ffc906;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(219,10,64,.24),transparent 70%)}
 html[data-theme="merc"]{--bg:#08090b;--panel:#14171a;--line:#2a3036;--text:#f2f4f5;--dim:#8d969e;--thr:#00d2be;--brk:#ff4d5e;--drs:#c9d0d6;--warn:#ffb020;
   --g1:#00d2be;--g2:#c9d0d6;--hero:#00d2be;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(0,210,190,.16),transparent 70%)}
+html[data-theme="ferrari"]{--bg:#120707;--panel:#201010;--line:#4a1d1d;--text:#fff4f0;--dim:#c49a94;--thr:#ffeb00;--brk:#ff3b3b;--drs:#f2f2f2;--warn:#ff9a3c;--g1:#dc0000;--g2:#ffeb00;--hero:#ffeb00;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(220,0,0,.26),transparent 70%)}
+html[data-theme="mclaren"]{--bg:#0b0b0d;--panel:#17171b;--line:#2e2e35;--text:#f6f6f6;--dim:#9a9aa5;--thr:#ff8000;--brk:#ee1c5a;--drs:#47c7fc;--warn:#ffd24a;--g1:#ff8000;--g2:#47c7fc;--hero:#ff8000;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(255,128,0,.22),transparent 70%)}
+html[data-theme="aston"]{--bg:#03130f;--panel:#0a2520;--line:#14463d;--text:#eefaf6;--dim:#7fb3a8;--thr:#cedc00;--brk:#ff4d5e;--drs:#6ee7d4;--warn:#ffb020;--g1:#00a88f;--g2:#cedc00;--hero:#cedc00;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(0,168,143,.22),transparent 70%)}
+html[data-theme="alpine"]{--bg:#060d1f;--panel:#0f1a38;--line:#223463;--text:#f0f4ff;--dim:#8c9bc9;--thr:#2da2ff;--brk:#ff4f8b;--drs:#ff87bc;--warn:#ffb020;--g1:#0090ff;--g2:#ff87bc;--hero:#2da2ff;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(0,144,255,.24),transparent 70%)}
+html[data-theme="williams"]{--bg:#030a22;--panel:#0b1b50;--line:#1f3a85;--text:#f0f5ff;--dim:#8fa6dc;--thr:#4aa8ff;--brk:#ff4d5e;--drs:#ffffff;--warn:#ffb020;--g1:#005aff;--g2:#37bfff;--hero:#4aa8ff;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(0,90,255,.28),transparent 70%)}
+html[data-theme="vcarb"]{--bg:#080c22;--panel:#121a48;--line:#2a3a8c;--text:#f4f6ff;--dim:#94a0d8;--thr:#ffffff;--brk:#ff3d57;--drs:#6f8bff;--warn:#ffb020;--g1:#4b6bff;--g2:#ffffff;--hero:#ffffff;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(75,107,255,.26),transparent 70%)}
+html[data-theme="sauber"]{--bg:#040604;--panel:#0f140f;--line:#26331f;--text:#f2fff2;--dim:#8aa28a;--thr:#52e252;--brk:#ff4d5e;--drs:#c8ffc8;--warn:#ffb020;--g1:#52e252;--g2:#b0b0b0;--hero:#52e252;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(82,226,82,.18),transparent 70%)}
+html[data-theme="haas"]{--bg:#0a0a0a;--panel:#171717;--line:#343434;--text:#ffffff;--dim:#9b9b9b;--thr:#ffffff;--brk:#ff2a3d;--drs:#b6babf;--warn:#ffb020;--g1:#e6002b;--g2:#ffffff;--hero:#ff2a3d;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(230,0,43,.2),transparent 70%)}
 body{background:var(--glow),var(--bg)}
 h1{padding-bottom:6px;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,var(--g1),var(--g2) 40%,transparent 85%) 1}
 .gear{color:var(--hero)}
-html[data-theme="rb"] .panel,html[data-theme="merc"] .panel{box-shadow:inset 0 2px 0 var(--g1)}
+html[data-theme]:not([data-theme="default"]) .panel{box-shadow:inset 0 2px 0 var(--g1)}
 #lapTable tr.has-trace:hover td{background:color-mix(in srgb,var(--text) 8%,transparent)}
-#themeSel button{padding:2px 10px;font-size:13px}
+#themeSel{font:600 13px Barlow,system-ui,sans-serif;padding:3px 8px;border-radius:6px;background:var(--panel);color:var(--text);border:1px solid var(--line)}
 /* ---- one-screen layout ---- */
 [hidden]{display:none!important}
 body{max-width:none;margin:0;padding:10px 12px;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:14px}
@@ -88,7 +96,7 @@ h1{font-size:18px;margin:0 0 6px}
 .tyresp{flex:1 1 0;display:flex;flex-direction:column}
 .tyresp .tyres{flex:1;min-height:0;gap:8px;align-content:stretch}
 .tyre{padding:6px;min-height:0;display:flex;flex-direction:column;justify-content:center}.tyre .t{font-size:20px}.tyre small{font-size:12px}
-.lapp{flex:0 1 330px;display:flex;flex-direction:column}
+.lapp{flex:0 1 280px;display:flex;flex-direction:column}
 .lap{gap:8px 24px;margin-bottom:6px}.lap .num{font-size:36px}
 #lapTable td{padding:3px 8px}
 .chartp{flex:1 1 0;display:flex;flex-direction:column}.chartp .cv{flex:1}
@@ -100,7 +108,14 @@ h1{font-size:18px;margin:0 0 6px}
 #rvInfo{margin-bottom:6px}
 #readout{min-height:0;margin-top:2px}#rvTop{margin-top:2px;line-height:1.4}
 #pvEmpty,#rvEmpty{padding:14px 0}
+.engp{flex:0 1 200px;display:flex;flex-direction:column}
+#engCtl{display:inline-flex;gap:6px;align-items:center}
+#engBtn,#engVoice{font:600 13px Barlow,system-ui,sans-serif;padding:3px 8px;border-radius:6px;background:var(--panel);color:var(--text);border:1px solid var(--line);cursor:pointer}
+#engBtn.on{background:var(--g1);color:#06120f;border-color:var(--g1)}#engVoice{max-width:150px}#engVol{width:70px}
+#cornTable{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}#cornTable td{padding:3px 8px;border-top:1px solid var(--line)}
+#cornTable td:nth-child(3){color:var(--brk);font-weight:600}
 @media(max-width:1100px),(max-height:620px){
+  .engp{flex:none}
   body{height:auto;overflow:auto}
   .grid{display:flex;flex-direction:column}.col{display:contents}
   .panel,.tyresp,.lapp,.chartp,#rival,#preview{flex:none}
@@ -110,7 +125,7 @@ h1{font-size:18px;margin:0 0 6px}
 </style>
 </head>
 <body>
-<h1>F1 25 Telemetry <span class="seg-btns" id="themeSel"><button data-t="default">Default</button><button data-t="rb">Red Bull</button><button data-t="merc">Mercedes</button></span> <span id="status">Waiting for data…</span></h1>
+<h1>F1 25 Telemetry <select id="themeSel" title="Team theme"><option value="default">Default</option><option value="rb">Red Bull Racing</option><option value="ferrari">Ferrari</option><option value="mclaren">McLaren</option><option value="merc">Mercedes</option><option value="aston">Aston Martin</option><option value="alpine">Alpine</option><option value="williams">Williams</option><option value="vcarb">Racing Bulls</option><option value="sauber">Kick Sauber</option><option value="haas">Haas</option></select> <span id="engCtl"><button id="engBtn">Engineer: Off</button> <select id="engVoice" title="Engineer voice"></select> <input id="engVol" type="range" min="0" max="1" step="0.05" value="0.9" title="Radio volume"></span> <span id="status">Waiting for data…</span></h1>
 <div id="revs"></div>
 <div class="grid">
 <div class="col colA">
@@ -140,6 +155,9 @@ h1{font-size:18px;margin:0 0 6px}
     </div>
     <div class="scroll"><table id="lapTable"><tbody></tbody></table></div>
   </div>
+  <div class="panel engp"><div class="lbl">Race engineer: <span id="engCap">radio off. Press "Engineer" to switch it on.</span></div>
+    <div class="lbl" id="cornHead">Time lost last lap: finish a lap to see where you lose time.</div>
+    <div class="scroll"><table id="cornTable"><tbody></tbody></table></div></div>
   <div class="panel chartp"><div class="lbl">Last 10 seconds: speed, throttle, brake</div><div class="cv" style="flex:1"><canvas id="chart"></canvas></div></div>
 </div>
 <div class="col colC">
@@ -193,7 +211,7 @@ h1{font-size:18px;margin:0 0 6px}
 </div>
 <script>
 const $ = id => document.getElementById(id);
-const T = { text: '#e9edf2', thr: '#38d39f', brk: '#ff4d5e', grid: '#2a323f' }; // live-chart colours, refreshed by readTheme()
+const T = { speed: '#e9edf2', text: '#e9edf2', thr: '#38d39f', brk: '#ff4d5e', grid: '#2a323f' }; // live-chart colours, refreshed by readTheme()
 const revs = $('revs'); for (let i = 0; i < 15; i++) revs.appendChild(document.createElement('i'));
 const names = ['Rear left', 'Rear right', 'Front left', 'Front right'], order = [2, 3, 0, 1]; // show front row first
 $('tyres').innerHTML = order.map(i => `<div class="tyre"><small>${names[i]}</small><div class="t" id="ty${i}">–</div><small id="tp${i}"></small><small id="tw${i}">Wear –</small><div class="wear"><b id="tb${i}" style="width:0"></b></div></div>`).join('');
@@ -211,7 +229,7 @@ function draw() {
     hist.forEach((d, i) => { const x = i / (MAX - 1) * w, y = h - Math.min(1, d[key] / max) * (h - 4) - 2; i ? g.lineTo(x, y) : g.moveTo(x, y); });
     g.stroke();
   };
-  line('speed', 350, T.text); line('throttle', 1, T.thr); line('brake', 1, T.brk);
+  line('speed', 350, T.speed); line('throttle', 1, T.thr); line('brake', 1, T.brk);
 }
 
 function render(d) {
@@ -255,7 +273,7 @@ function renderLap(d) {
 const es = new EventSource('/stream');
 es.onmessage = e => { lastMsg = Date.now(); $('status').textContent = 'Live'; $('status').className = 'live'; const d = JSON.parse(e.data);
   if (d.warn) { $('status').textContent = d.warn; $('status').className = ''; return; }
-  render(d); renderLap(d); pvLive(d); rvLive(d); };
+  render(d); renderLap(d); pvLive(d); rvLive(d); engineerTick(d); };
 es.onerror = () => { $('status').textContent = 'Server disconnected'; $('status').className = ''; };
 setInterval(() => { if (lastMsg && Date.now() - lastMsg > 2000) { $('status').textContent = 'No data from game'; $('status').className = ''; } }, 1000);
 (function loop() { draw(); requestAnimationFrame(loop); })();
@@ -526,17 +544,152 @@ function drawRival() {
 function readTheme() {
   const cs = getComputedStyle(document.documentElement), v = n => cs.getPropertyValue(n).trim();
   Object.assign(T, { text: v('--text'), thr: v('--thr'), brk: v('--brk'), grid: v('--line') });
+  T.speed = T.thr.toLowerCase() === '#ffffff' ? v('--drs') : T.text; // keep speed and throttle lines distinct on white-accent themes
   Object.assign(C, { speed: v('--text'), thr: v('--thr'), brk: v('--brk'), partial: v('--dim'), grid: v('--line'), dim: v('--dim'), live: v('--drs'), panel: v('--panel') });
   const cur = document.documentElement.dataset.theme || 'default';
-  document.querySelectorAll('#themeSel button').forEach(b => b.classList.toggle('on', b.dataset.t === cur));
+  $('themeSel').value = cur;
   drawPreview(); drawRival();
 }
-document.querySelectorAll('#themeSel button').forEach(b => b.onclick = () => {
-  document.documentElement.dataset.theme = b.dataset.t;
-  try { localStorage.setItem('f1-theme', b.dataset.t); } catch (e) {}
+$('themeSel').onchange = e => {
+  document.documentElement.dataset.theme = e.target.value;
+  try { localStorage.setItem('f1-theme', e.target.value); } catch (err) {}
   readTheme();
-});
+};
 readTheme();
+
+// ============ Race engineer ============
+// ==== ENGINEER ANALYSIS START (pure functions, no DOM)
+const GRID = 5; // metres between comparison points
+function resample(S) { // trace rows [dist, time ms, speed, throttle, brake, ...] -> arrays every GRID metres
+  const n = Math.floor(S[S.length - 1][0] / GRID) + 1, o = { t: [], v: [], th: [], br: [] };
+  let j = 0;
+  for (let i = 0; i < n; i++) {
+    const d = i * GRID; while (j < S.length - 2 && S[j + 1][0] < d) j++;
+    const a = S[j], b = S[j + 1], f = b[0] > a[0] ? Math.min(1, Math.max(0, (d - a[0]) / (b[0] - a[0]))) : 0;
+    o.t.push(a[1] + (b[1] - a[1]) * f); o.v.push(a[2] + (b[2] - a[2]) * f); o.th.push(a[3] + (b[3] - a[3]) * f); o.br.push(a[4] + (b[4] - a[4]) * f);
+  }
+  return o;
+}
+function findCorners(v, H = 20) { // a corner = a speed dip of at least H km/h; its zone runs from the speed peak before it to the peak after it
+  const s = v.map((_, i) => { let a = 0, c = 0; for (let k = Math.max(0, i - 3); k <= Math.min(v.length - 1, i + 3); k++) { a += v[k]; c++; } return a / c; });
+  const ex = []; let dir = 0, hi = 0, lo = 0;
+  for (let i = 1; i < s.length; i++) {
+    if (s[i] > s[hi]) hi = i; if (s[i] < s[lo]) lo = i;
+    if (dir >= 0 && s[hi] - s[i] >= H) { ex.push({ i: hi, t: 'p' }); dir = -1; hi = lo = i; }
+    else if (dir <= 0 && s[i] - s[lo] >= H) { ex.push({ i: lo, t: 't' }); dir = 1; hi = lo = i; }
+  }
+  return ex.map((e, k) => e.t === 't' ? { apex: e.i, s: k > 0 && ex[k - 1].t === 'p' ? ex[k - 1].i : 0, e: k + 1 < ex.length ? ex[k + 1].i : s.length - 1 } : null).filter(Boolean);
+}
+function analyse(lastS, refS) { // time lost per corner (ms, + = lost) and why, last lap vs reference lap
+  const L = resample(lastS), R = resample(refS), n = Math.min(L.t.length, R.t.length) - 1;
+  return findCorners(R.v.slice(0, n + 1)).map((c, k) => {
+    const s = c.s, e = Math.min(c.e, n), low = X => { let m = s; for (let i = s; i <= e; i++) if (X.v[i] < X.v[m]) m = i; return m; };
+    const aL = low(L), aR = low(R), why = [], dv = L.v[aL] - R.v[aR];
+    const bp = (X, a) => { for (let i = s; i <= a; i++) if (X.br[i] >= 20) return i; return -1; };
+    const tp = (X, a) => { for (let i = a; i <= e; i++) if (X.th[i] >= 80) return i; return -1; };
+    const b1 = bp(L, aL), b2 = bp(R, aR), t1 = tp(L, aL), t2 = tp(R, aR);
+    if (b1 >= 0 && b2 >= 0 && (b2 - b1) * GRID >= 8) why.push(`braked ${(b2 - b1) * GRID} metres earlier`);
+    if (dv <= -4) why.push(`${Math.round(-dv)} kilometres per hour slower at the apex`);
+    if (t1 >= 0 && t2 >= 0 && (t1 - t2) * GRID >= 8) why.push(`${(t1 - t2) * GRID} metres later on the throttle`);
+    if (!why.length && L.v[e] - R.v[e] <= -4) why.push(`${Math.round(R.v[e] - L.v[e])} kilometres per hour down at the exit`);
+    return { n: k + 1, dist: c.apex * GRID, loss: Math.round((L.t[e] - L.t[s]) - (R.t[e] - R.t[s])), why: why.slice(0, 2) };
+  });
+}
+// ==== ENGINEER ANALYSIS END
+
+const digits = n => String(n).split('').join(' ');
+const sayTime = ms => { const m = Math.floor(ms / 60000), s = (ms % 60000) / 1000, si = Math.floor(s); return `${m} ${String(si).padStart(2, '0')} point ${digits(String(Math.floor((s - si) * 100)).padStart(2, '0'))}`; };
+const sayDelta = ms => { const a = Math.abs(ms); return `${ms < 0 ? 'minus' : 'plus'} ${a >= 1000 ? Math.floor(a / 1000) + ' ' : ''}point ${digits(String(Math.floor((a % 1000) / 10)).padStart(2, '0'))}`; };
+const sayLoss = ms => ms >= 95 ? `${Math.round(ms / 100)} tenth${Math.round(ms / 100) > 1 ? 's' : ''}` : `${Math.max(1, Math.round(ms / 10))} hundredths`;
+
+const Eng = { on: false, voice: null, vol: 0.9, q: [], speaking: false, last: null, uid: null, lap: 0, wear: 0, str: 0 };
+let AC;
+function squelch(len) { // radio key-up / key-down noise burst
+  if (!AC) return;
+  const n = Math.floor(AC.sampleRate * len), buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+  const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
+  f.type = 'bandpass'; f.frequency.value = 2200; g.gain.value = 0.25 * Eng.vol; src.buffer = buf; src.connect(f).connect(g).connect(AC.destination); src.start();
+}
+function speak(m) {
+  Eng.speaking = true; $('engCap').textContent = m.cap; squelch(0.12);
+  const next = i => {
+    if (i >= m.parts.length || !Eng.on) { squelch(0.08); Eng.speaking = false; return; }
+    const u = new SpeechSynthesisUtterance(m.parts[i]); // one sentence at a time (long utterances get cut off by Chrome)
+    if (Eng.voice) { u.voice = Eng.voice; u.lang = Eng.voice.lang; } else u.lang = 'en-GB';
+    u.rate = 1.08; u.pitch = 0.9; u.volume = Eng.vol; u.onend = u.onerror = () => next(i + 1); speechSynthesis.speak(u);
+  };
+  setTimeout(() => next(0), 200);
+}
+const say = (parts, cap, urgent) => { if (Eng.on) Eng.q.push({ parts, cap: cap || parts[0], urgent, exp: Date.now() + 40000 }); };
+
+function fillVoices() {
+  if (!('speechSynthesis' in window)) return;
+  const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)), sel = $('engVoice');
+  const saved = (() => { try { return localStorage.getItem('f1-voice'); } catch (e) { return null; } })();
+  sel.innerHTML = vs.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
+  const pick = vs.find(v => v.name === saved) || vs.find(v => /ryan|george|daniel|uk english male/i.test(v.name)) || vs.find(v => v.lang === 'en-GB') || vs[0];
+  if (pick) { sel.value = pick.name; Eng.voice = pick; }
+}
+if ('speechSynthesis' in window) { speechSynthesis.onvoiceschanged = fillVoices; fillVoices(); }
+$('engVoice').onchange = e => { Eng.voice = speechSynthesis.getVoices().find(v => v.name === e.target.value) || null; try { localStorage.setItem('f1-voice', e.target.value); } catch (err) {} say(['Radio check, how do you hear me?']); };
+$('engVol').oninput = e => { Eng.vol = +e.target.value; };
+$('engBtn').onclick = () => {
+  Eng.on = !Eng.on; $('engBtn').classList.toggle('on', Eng.on); $('engBtn').textContent = 'Engineer: ' + (Eng.on ? 'On' : 'Off');
+  if (!Eng.on) { Eng.q = []; Eng.speaking = false; if ('speechSynthesis' in window) speechSynthesis.cancel(); $('engCap').textContent = 'radio off. Press "Engineer" to switch it on.'; return; }
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) {}
+  if (!('speechSynthesis' in window)) { $('engCap').textContent = 'this browser has no speech synthesis, captions only.'; return; }
+  say(['Radio check, how do you hear me?'], 'Radio check, how do you hear me?', true);
+};
+
+function renderCorners(rows, head) {
+  $('cornHead').textContent = head || 'Time lost last lap: finish a lap to see where you lose time.';
+  $('cornTable').tBodies[0].innerHTML = (rows || []).map(r => `<tr><td>Turn ${r.n}</td><td>${r.dist} m</td><td>+${(r.loss / 1000).toFixed(3)}</td><td>${r.why.join(', ').replace(/kilometres per hour/g, 'km/h').replace(/ metres/g, ' m') || 'small losses through the corner'}</td></tr>`).join('');
+}
+
+async function lapReview(d, L) { // a lap just finished: compare it with your best other clean lap, corner by corner
+  const get = async u => { try { return await (await fetch(u)).json(); } catch (e) { return null; } };
+  const mine = ((await get('/traces')) || []).filter(m => m.uid === d.session.uid), clean = m => !m.invalid && !m.pit && !m.sc;
+  const last = mine.find(m => m.lap === L.lap), ref = mine.filter(m => clean(m) && m.lap !== L.lap).sort((a, b) => a.ms - b.ms)[0];
+  const parts = [`Lap time ${sayTime(L.ms)}${ref ? ', ' + sayDelta(L.ms - ref.ms) + ' on your best' : ''}.`];
+  let cap = `Lap ${L.lap}: ${fmt(L.ms)}${ref ? ' (' + (L.ms - ref.ms >= 0 ? '+' : '') + ((L.ms - ref.ms) / 1000).toFixed(3) + ' vs best)' : ''}`, rows = null, head;
+  if (L.pit) parts.push('Pit lap, no analysis.');
+  else if (L.sc) parts.push('Lap under the safety car, no analysis.');
+  else {
+    if (L.invalid) parts.push('That lap is deleted.');
+    if (last && ref) {
+      const [a, b] = await Promise.all([get('/trace/' + last.id), get('/trace/' + ref.id)]);
+      if (a && b) {
+        rows = analyse(a.samples, b.samples).filter(r => r.loss >= 30).sort((x, y) => y.loss - x.loss).slice(0, 5);
+        head = `Time lost on lap ${L.lap} vs your best lap (lap ${ref.lap}), by corner`;
+        if (rows.length) { parts.push('Where you lost time.'); rows.slice(0, 3).forEach(r => parts.push(`Turn ${r.n}, ${sayLoss(r.loss)}${r.why.length ? ': ' + r.why.join(' and ') : ''}.`)); cap += `, ${rows.length} corner${rows.length > 1 ? 's' : ''} flagged`; }
+        else parts.push('Clean lap, nothing to flag.');
+      }
+    } else if (!ref && clean(L)) parts.push('That is our reference lap now.');
+  }
+  renderCorners(rows, head); say(parts, cap);
+}
+
+function engineerTick(d) {
+  Eng.last = d; const now = Date.now(), L = d.laps && d.laps[d.laps.length - 1];
+  if (d.session && d.session.uid !== Eng.uid) { Eng.uid = d.session.uid; Eng.lap = L ? L.lap : 0; Eng.wear = 0; Eng.q = []; renderCorners(); } // new session: never replay old laps
+  else if (L && L.lap > Eng.lap) { Eng.lap = L.lap; lapReview(d, L); }
+  else if (L && L.lap < Eng.lap) Eng.lap = L.lap; // flashback
+  const w = d.wear && Math.max(...d.wear);
+  if (w < 10) Eng.wear = 0;
+  for (const th of [30, 50, 70]) if (w >= th && Eng.wear < th) {
+    Eng.wear = th; const names = ['rear left', 'rear right', 'front left', 'front right'];
+    say([`Tyre wear is ${Math.round(w)} percent, worst on the ${names[d.wear.indexOf(w)]}.`]);
+  }
+  if (d.throttle > 0.95 && d.brake < 0.05 && d.speed > 150) { if (!Eng.str) Eng.str = now; } else Eng.str = 0;
+}
+setInterval(() => { // only talk on a straight (or when stopped), never mid-corner
+  if (!Eng.on || Eng.speaking || !Eng.q.length) return;
+  const m = Eng.q[0], now = Date.now(), d = Eng.last;
+  if (now > m.exp) { Eng.q.shift(); return; }
+  if (m.urgent || !d || d.speed < 30 || (Eng.str && now - Eng.str > 900)) { Eng.q.shift(); speak(m); }
+}, 250);
+renderCorners();
 </script>
 </body>
 </html>
