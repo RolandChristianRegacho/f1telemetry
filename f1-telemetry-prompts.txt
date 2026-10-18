@@ -1,0 +1,139 @@
+F1 25 TELEMETRY DASHBOARD: TWO PROMPTS
+======================================
+
+HOW TO USE
+- Do PROMPT 1 first, then PROMPT 2 (the desktop app can bundle the voice engine).
+- With each prompt, attach the current server.js and index.html from
+  C:\Users\regac\Documents\f1telemetry. For prompt 2, also attach the folder or files
+  produced by prompt 1 (the updated server.js / index.html, and the piper folder if it exists).
+- Copy everything between the START and END lines of a prompt.
+
+
+######################################################################
+PROMPT 1: BETTER ENGINEER VOICE WITH A LOCAL PIPER TTS ENGINE
+######################################################################
+----- START PROMPT 1 -----
+
+I have a working F1 25 telemetry dashboard that runs on my Windows PC. I attached its two files.
+Please upgrade the race engineer's voice from the browser's built-in speech to a local, offline,
+natural-sounding neural voice using Piper TTS, with a real team-radio audio effect.
+
+CURRENT PROJECT (do not break any of this)
+- server.js: zero-dependency Node.js. It receives the F1 25 UDP telemetry (format 2025, port 20777),
+  streams it to the browser over Server-Sent Events at /stream, and serves index.html on port 3000.
+  It also serves /traces and /trace/:id, and saves laps.csv and a traces/ folder next to itself.
+  It has a --demo mode (node server.js --demo) that fakes data.
+- index.html: a single-page dashboard that fits on one screen without scrolling. It has a team-theme
+  dropdown (every F1 2025 team), lap times, a lap preview, a "time vs rival" panel, and a race engineer.
+- The race engineer (the section "Race engineer" at the end of the script) works like this:
+  an Eng object, a queue filled by say(parts, caption, urgent), a scheduler that only speaks on straights,
+  speak(m) which currently uses window.speechSynthesis one sentence at a time, and squelch() which makes
+  short radio static bursts with Web Audio. After every lap it speaks the lap time, the gap to the best
+  lap, and the top 3 corners where time was lost (the pure analysis functions are between the markers
+  "ENGINEER ANALYSIS START" and "ENGINEER ANALYSIS END").
+
+WHAT I WANT
+1. Piper integration on the server
+   - Add an endpoint such as GET /tts?text=... to server.js that runs the Piper executable with a chosen
+     voice model and returns WAV audio. Use child_process.spawn and send the text on stdin. Do not add
+     npm dependencies.
+   - Expected folder layout next to server.js: piper\piper.exe and one or more voice files
+     (*.onnx plus *.onnx.json) in piper\voices\. Make the paths easy to change in one config block at the top.
+   - Cache every generated sentence on disk (a tts-cache folder, keyed by a hash of voice + settings + text)
+     because many lines repeat. Cap the cache size.
+   - Add a /tts/voices endpoint that lists the installed voices so the page can fill a voice picker.
+2. Playback in the browser with a real radio effect
+   - Fetch the audio per sentence, decode it with Web Audio, and play it through an effect chain:
+     high-pass around 400 Hz, low-pass around 3200 Hz, a gentle waveshaper distortion, light compression,
+     a faint continuous crackle bed while the engineer talks, and the existing squelch burst at the start
+     and end of each message.
+   - Preload the next sentence while the current one plays so there are no gaps.
+   - Add an "Radio effect" strength slider (0 = clean voice, 1 = heavy radio), plus the existing volume
+     slider and voice picker. Remember the choices in localStorage inside try/catch.
+3. Fallback
+   - If Piper is missing, a voice is missing, or a request fails, fall back automatically to the current
+     browser speechSynthesis behaviour. Show a short, clear message in the engineer caption saying why.
+4. Keep everything else working
+   - Keep the one-screen layout, all themes, the lap analysis, the "only talk on a straight" rule,
+     the message queue and expiry, and the Engineer On/Off button.
+   - It must still work with node server.js --demo for testing.
+5. Setup help
+   - Give me step-by-step Windows instructions: where to download the Piper Windows release, where to
+     put piper.exe, which English (UK, male) voice to download and where to put it (for example a
+     voice such as en_GB-alan-medium or en_GB-northern_english_male-medium; check the current Piper
+     voices list and tell me what is available), and how to test it from the command line before
+     running the dashboard.
+   - Tell me how to tune speed and naturalness (Piper's length_scale and noise settings) and expose a
+     speaking-speed slider if it is easy.
+
+DELIVERABLES
+- The complete updated server.js and index.html (full files, not snippets), ready to replace mine.
+- A short README section on setup, troubleshooting (for example Piper not starting, antivirus, wrong
+  path), and how to add more voices.
+- Test it with --demo and tell me honestly what you could and could not verify (for example, you cannot
+  run the Piper binary yourself if it is not available).
+
+----- END PROMPT 1 -----
+
+
+######################################################################
+PROMPT 2: TURN THE DASHBOARD INTO A DESKTOP APP (ELECTRON)
+######################################################################
+----- START PROMPT 2 -----
+
+I have a working F1 25 telemetry dashboard that runs as a local Node.js server plus a browser page on my
+Windows PC. Please turn it into a standalone Windows desktop app using Electron, without breaking the
+existing web version. I attached the project files.
+
+CURRENT PROJECT
+- server.js: zero-dependency Node.js. Receives the F1 25 UDP telemetry (format 2025, UDP port 20777),
+  streams it to the page over Server-Sent Events (/stream), serves index.html on HTTP port 3000, serves
+  /traces and /trace/:id, and writes laps.csv and a traces/ folder next to itself (demo mode writes
+  laps-demo.csv and traces-demo/). Run with node server.js, or node server.js --demo for fake data.
+- index.html: one-screen dashboard (no scrolling), team themes, lap preview, time vs rival, and a
+  speaking race engineer that uses Web Audio and speech (and, if I did the voice upgrade, a local Piper
+  TTS engine called through a /tts endpoint with a piper\ folder next to server.js).
+
+WHAT I WANT
+1. Electron shell
+   - package.json, main.js (and preload.js only if really needed), with "npm start" for development and
+     "npm run dist" to build a Windows installer and a portable .exe (use electron-builder).
+   - The app starts the existing server automatically (run the server code inside the main process or as
+     a child process; choose the more robust option and explain why) and opens a BrowserWindow pointing at
+     it. Close the server cleanly when the app quits.
+   - Single-instance lock so a second launch focuses the existing window.
+2. Data location
+   - Right now server.js writes laps.csv and traces/ next to itself. In the packaged app that folder is
+     read-only, so make the data folder configurable (environment variable or argument) and have Electron
+     pass app.getPath('userData') (or a "Documents\F1Telemetry" folder). Keep the old behaviour when running
+     node server.js on its own. Add a menu item to open the data folder.
+3. Window features
+   - Remember window size, position and maximized state between launches.
+   - An always-on-top toggle (menu and a keyboard shortcut), a borderless "overlay" mode I can switch to,
+     and a fullscreen toggle (F11).
+   - A simple menu: Fullscreen, Always on top, Open data folder, Reload, Developer tools, Quit.
+   - Make sure audio can start without extra clicks inside Electron (autoplay policy), and that
+     speechSynthesis / Web Audio still work.
+4. Robustness
+   - If UDP port 20777 or HTTP port 3000 is already in use (for example another telemetry program), show
+     a friendly dialog that explains what is wrong and offers to use another HTTP port. Make the ports
+     configurable.
+   - Show a clear first-run note: Windows Firewall may ask to allow the app to receive UDP, and the game
+     must be set to UDP Format 2025, IP 127.0.0.1, port 20777.
+5. Bundling
+   - If the project has a piper\ folder (local TTS), bundle it as extra resources so the packaged app
+     finds it, and explain the path handling.
+   - Add an app icon placeholder and the build config for it. Use the app name "F1 Telemetry".
+6. Keep the web version working
+   - node server.js must still run on its own exactly as before.
+
+DELIVERABLES
+- All new and changed files in full (package.json, main.js, any changed server.js lines or the complete
+  file), ready to copy into the project folder.
+- Exact Windows commands to install Node dependencies, run in development, and build the installer.
+- A short troubleshooting list (blank window, no data arriving, port in use, antivirus or SmartScreen
+  warnings on an unsigned exe, audio not playing).
+- Be honest about what you tested and what you could not (for example you cannot build the Windows
+  installer or run the game in your environment).
+
+----- END PROMPT 2 -----
