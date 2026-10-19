@@ -21,7 +21,7 @@ function rewindFlags(f, dist) {
   if (f.sc === null) f.scType = 0;
   return f;
 }
-const EXPECT = { 2: 1285, 6: 1352, 10: 1041 }; // F1 25 packet sizes from the official spec
+const EXPECT = { 2: 1285, 6: 1352, 7: 1239, 10: 1041 }; // F1 25 packet sizes from the official spec (7 = Car Status, from memory of the spec)
 const seen = new Set();
 
 // Lookup tables from the F1 25 UDP spec
@@ -44,7 +44,7 @@ function push() {
   }
   lastSent = Date.now();
   const msg = `data: ${JSON.stringify({ ...state.tel, warn: state.warn, lap: state.lap, wear: state.wear, laps: state.laps,
-    session: state.session, sc: state.sc, pos: state.pos, traceVer: state.traceVer, seg: SEG, rivals: rivals() })}\n\n`;
+    session: state.session, sc: state.sc, pos: state.pos, traceVer: state.traceVer, seg: SEG, rivals: rivals(), me: state.me, field: field() })}\n\n`;
   clients.forEach(res => res.write(msg));
 }
 
@@ -146,13 +146,14 @@ function dropLapsFrom(num) {
 // Every car's lap is cut into SEG-metre mini-sectors; we record the lap time at which each car crosses each boundary.
 // Comparing your time through a mini-sector with the rival's (same lap number when possible) shows where you gain or lose.
 const SEG = 100;
-const newCar = () => ({ lap: null, dist: null, time: null, cross: [], next: 0, laps: new Map(), pos: 0, active: false, gapFront: 0, xz: null });
+const newCar = () => ({ lap: null, dist: null, time: null, cross: [], next: 0, laps: new Map(), pos: 0, active: false, gapFront: 0, xz: null,
+  pit: 0, stops: 0, lead: 0, tyre: null, age: null }); // pit status, pit stops made, gap to the race leader (ms), visual compound, tyre age (laps)
 let cars = Array.from({ length: 22 }, newCar);
 let drivers = []; // index -> { name, number } from the participants packet
 state.me = 0;
 
-function updateCar(c, { num, dist, cur, last, pos, active, gapFront }) {
-  Object.assign(c, { pos, active, gapFront });
+function updateCar(c, { num, dist, cur, last, pos, active, gapFront, pit = 0, stops = 0, lead = 0 }) {
+  Object.assign(c, { pos, active, gapFront, pit, stops, lead });
   if (!num) return;
   const k = d => Math.floor(d / SEG) + 1; // first boundary index after distance d
   if (c.lap === null || num > c.lap + 1) { c.lap = num; c.cross = []; c.next = dist < 0 ? 0 : k(dist); c.dist = null; } // joined mid-lap
@@ -191,6 +192,12 @@ function compare(lapNum, mine, r) {
   if (!rl) return null;
   const m = segTimes(mine), t = segTimes(rl);
   return { lap: lapNum, rivalLap: rLap, gained: m.map((v, i) => v != null && t[i] != null ? Math.round(t[i] - v) : null) }; // + = you were quicker
+}
+
+// Compact running order for the strategy view (undercut / overcut warnings): every active car
+function field() {
+  return cars.map((c, i) => c.active && c.pos ? { i, pos: c.pos, lap: c.lap, pit: c.pit, stops: c.stops, lead: c.lead, tyre: c.tyre, age: c.age,
+    name: drivers[i] ? drivers[i].name : null, num: drivers[i] ? drivers[i].number : null } : null).filter(Boolean);
 }
 
 function rivals() {
@@ -267,7 +274,8 @@ function parseLap(b) { // packet id 2, 57 bytes per car
   for (let i = 0; i < 22; i++) {
     const c = 29 + i * 57, status = b.readUInt8(c + 45); // resultStatus: 2 = active, 3 = finished
     updateCar(cars[i], { last: b.readUInt32LE(c), cur: b.readUInt32LE(c + 4), dist: b.readFloatLE(c + 20), pos: b.readUInt8(c + 32),
-      num: b.readUInt8(c + 33), gapFront: b.readUInt16LE(c + 14) + b.readUInt8(c + 16) * 60000, active: status === 2 || status === 3 });
+      num: b.readUInt8(c + 33), gapFront: b.readUInt16LE(c + 14) + b.readUInt8(c + 16) * 60000, active: status === 2 || status === 3,
+      pit: b.readUInt8(c + 34), stops: b.readUInt8(c + 35), lead: b.readUInt16LE(c + 17) + b.readUInt8(c + 19) * 60000 });
   }
   const o = carOffset(b);
   onLap({ last: b.readUInt32LE(o), cur: b.readUInt32LE(o + 4), dist: b.readFloatLE(o + 20), pos: b.readUInt8(o + 32), num: b.readUInt8(o + 33),
@@ -280,6 +288,10 @@ function parseSession(b) { // packet id 1
   state.session.type = SESSION_TYPES[type] || `Type ${type}`;
   state.session.track = TRACKS[track] || `Track ${track}`;
   state.sc = b.readUInt8(153); // safetyCarStatus, after 21 marshal zones of 5 bytes
+}
+
+function parseStatus(b) { // packet id 7, 55 bytes per car: visual tyre compound (26), tyre age in laps (27)
+  for (let i = 0; i < 22; i++) { const o = 29 + i * 55; cars[i].tyre = b.readUInt8(o + 26); cars[i].age = b.readUInt8(o + 27); }
 }
 
 function parseDamage(b) { // packet id 10, tyre wear % is the first 4 floats
@@ -295,6 +307,11 @@ if (DEMO) {
   const bots = [{ i: 1, lapT: 20.15, off: 0.05, amp: 30, f: 3, ph: 0 }, { i: 2, lapT: 19.93, off: -0.04, amp: 22, f: 2, ph: 1 }];
   drivers = [{ name: 'YOU', number: 1 }, { name: 'AHEAD', number: 44 }, { name: 'BEHIND', number: 16 }];
   bots.forEach(b => { b.lap = 1; b.start = 0; b.last = 0; });
+  bots[0].stopLaps = [11, 23]; bots[1].stopLaps = [7, 16]; // demo pit stops, to exercise the undercut / overcut warnings
+  const pitState = (b, num, dist) => { // in the pit lane over the last 300 m of a stop lap and the first 300 m of the next
+    const inLane = (b.stopLaps.includes(num) && dist > L - 300) || (b.stopLaps.includes(num - 1) && dist < 300);
+    return { pit: inLane ? 1 : 0, stops: b.stopLaps.filter(n => n < num || (n === num && dist > L - 300)).length };
+  };
   setInterval(() => {
     t += 0.033;
     if (t - lapStart > 20) { last = Math.round((t - lapStart) * 1000); lapStart = t; lapNum++; }
@@ -310,16 +327,21 @@ if (DEMO) {
     const meR = { i: 0, D: (lapNum - 1 + u) * L }, runners = [meR];
     bots.forEach(b => { const d0 = (t / b.lapT + b.off) * L; b.D = d0 + b.amp * Math.sin(2 * Math.PI * b.f * d0 / L + b.ph); runners.push(b); });
     runners.sort((x, y) => y.D - x.D).forEach((r, k) => { r.pos = k + 2; }); // P2..P4
+    const leadD = runners[0].D + 0.06 * L, lead = r => Math.round((leadD - r.D) / L * 20000); // imaginary P1 just up the road
     const byPos = p => runners.find(r => r.pos === p), gapTo = (a, b) => a && b ? Math.round((a.D - b.D) / L * 20000) : 0;
     bots.forEach(b => {
       const num = Math.floor(b.D / L) + 1;
       if (num !== b.lap) { b.last = Math.round((t - b.start) * 1000); b.start = t; b.lap = num; }
+      const ps = pitState(b, num, b.D - (num - 1) * L);
       updateCar(cars[b.i], { num, dist: b.D - (num - 1) * L, cur: Math.round((t - b.start) * 1000), last: b.last, pos: b.pos, active: true,
-        gapFront: gapTo(byPos(b.pos - 1), b) });
+        gapFront: gapTo(byPos(b.pos - 1), b), lead: lead(b), ...ps });
+      const lastStop = Math.max(0, ...b.stopLaps.filter(n => n < num)); cars[b.i].tyre = lastStop ? 18 : 17; cars[b.i].age = num - 1 - lastStop;
       cars[b.i].xz = shape((b.D % L) / L);
     });
     const mePos = meR.pos;
-    updateCar(cars[0], { num: lapNum, dist: u * L, cur: Math.round((t - lapStart) * 1000), last, pos: mePos, active: true, gapFront: gapTo(byPos(mePos - 1), meR) });
+    updateCar(cars[0], { num: lapNum, dist: u * L, cur: Math.round((t - lapStart) * 1000), last, pos: mePos, active: true, gapFront: gapTo(byPos(mePos - 1), meR),
+      lead: lead(meR), pit: lapNum % 6 === 0 ? 1 : 0, stops: Math.floor(lapNum / 6) });
+    cars[0].tyre = lapNum >= 6 ? 18 : 16; cars[0].age = (lapNum - 1) % 6;
     cars[0].xz = state.pos;
     state.wear = [1.2, 1.1, 1.8, 1.9].map(x => +(x * (1 + t / 12)).toFixed(1));
     onLap({ last, cur: Math.round((t - lapStart) * 1000), dist: u * 4000, pos: mePos, num: lapNum, sector: Math.min(2, Math.floor((t - lapStart) / 6.7)),
@@ -344,7 +366,7 @@ if (DEMO) {
     if (EXPECT[id] && !seen.has(id)) { seen.add(id); console.log(`Receiving packet ${id} (${b.length} bytes, format ${format}, game version ${b.readUInt8(3)}.${String(b.readUInt8(4)).padStart(2, '0')})`); }
     state.warn = null;
     checkSession(b.readBigUInt64LE(7).toString(16));
-    if (id === 6) parseTelemetry(b); else if (id === 2) parseLap(b); else if (id === 10) parseDamage(b); else if (id === 1) parseSession(b); else if (id === 0) parseMotion(b); else if (id === 4) parseParticipants(b);
+    if (id === 6) parseTelemetry(b); else if (id === 2) parseLap(b); else if (id === 10) parseDamage(b); else if (id === 1) parseSession(b); else if (id === 0) parseMotion(b); else if (id === 4) parseParticipants(b); else if (id === 7) parseStatus(b);
     push();
   });
   sock.bind(UDP_PORT);

@@ -3,67 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
-<title>F1 25 Telemetry</title>
+<title>Pit Wall · Telemetry &amp; Timing</title>
 <script>try{var t=localStorage.getItem('f1-theme');if(t)document.documentElement.dataset.theme=t}catch(e){}</script>
-<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;700&family=Barlow:wght@400;600&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Barlow+Condensed:wght@500;600;700&family=Barlow:wght@400;500;600&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
 <style>
-:root{--bg:#12161d;--panel:#1b212b;--line:#2a323f;--text:#e9edf2;--dim:#8a95a5;--thr:#38d39f;--brk:#ff4d5e;--drs:#4db8ff;--warn:#ffb020}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font:15px Barlow,system-ui,sans-serif;padding:16px;max-width:1100px;margin-inline:auto}
-h1{font:700 22px "Barlow Condensed",sans-serif;margin:0 0 12px;display:flex;justify-content:space-between;align-items:baseline}
-#status{font:600 13px Barlow,sans-serif;color:var(--dim)}#status.live{color:var(--thr)}
-#revs{display:grid;grid-template-columns:repeat(15,1fr);gap:4px;margin-bottom:12px}
-#revs i{height:12px;border-radius:6px;background:var(--line)}
-#revs i.on{background:var(--thr)}#revs i.on.m{background:var(--brk)}#revs i.on.h{background:var(--drs)}
-.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
-.panel{background:var(--panel);border:1px solid var(--line);border-radius:8px;padding:14px}
-.wide{grid-column:1/-1}
-.big{display:flex;gap:28px;align-items:flex-end}
-.gear{font:700 150px/0.85 "Barlow Condensed",sans-serif}
-.num{font:700 64px/1 "Barlow Condensed",sans-serif}.unit{color:var(--dim);font-size:14px;margin-left:4px}
-.lbl{color:var(--dim);font-size:13px;margin-bottom:4px}
-.pedal{height:14px;background:var(--line);border-radius:7px;overflow:hidden;margin:4px 0 12px}
-.pedal b{display:block;height:100%;width:0}
-#drs{display:inline-block;padding:2px 10px;border-radius:5px;background:var(--line);color:var(--dim);font-weight:600}
-#drs.on{background:var(--drs);color:#062033}
-canvas{width:100%;height:170px;display:block}
-.tyres{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.tyre{border:1px solid var(--line);border-radius:6px;padding:8px}
-.tyre .t{font:700 26px "Barlow Condensed",sans-serif}
-.tyre small{color:var(--dim);display:block}
-.lap{display:flex;gap:36px;flex-wrap:wrap;margin-bottom:10px}
-#lapTable{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
-#lapTable td{padding:5px 8px;border-top:1px solid var(--line)}
-#lapTable tr.best td{color:var(--thr);font-weight:600}#lapTable tr.bad td:nth-child(2){color:var(--warn)}
-#lapTable tr.skip td{color:var(--dim)}
-.wear{height:6px;background:var(--line);border-radius:3px;overflow:hidden;margin-top:6px}.wear b{display:block;height:100%;background:var(--thr)}
-#lapTable tr.has-trace{cursor:pointer}#lapTable tr.has-trace:hover td{background:#222a36}#lapTable tr.sel td:first-child{box-shadow:inset 3px 0 var(--drs)}
-.pv-head{display:flex;flex-wrap:wrap;gap:10px 18px;align-items:center;margin-bottom:12px}
-.pv-head label{color:var(--dim);font-size:13px;display:flex;gap:6px;align-items:center}
-select,button{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:6px;font:14px Barlow,sans-serif;padding:5px 8px;max-width:100%}
-button{cursor:pointer}button:hover,select:hover{border-color:var(--dim)}
-.preview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,2fr);gap:14px}
-#map{height:300px}#spd{height:170px}#ped{height:120px}.pv-charts canvas{cursor:crosshair;touch-action:none}
-.legend{display:flex;flex-wrap:wrap;gap:4px 14px;color:var(--dim);font-size:12px;margin:6px 0 2px}
-.legend i{display:inline-block;width:16px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
-.legend i.dash{border-top-style:dashed}.legend i.dot{width:8px;height:8px;border:0;border-radius:50%}
-#readout{font-variant-numeric:tabular-nums;font-size:13px;color:var(--dim);min-height:20px;margin-top:6px}#readout b{color:var(--text);font-weight:600}
-#pvEmpty,#rvEmpty{color:var(--dim);padding:30px 0;text-align:center}
-.seg-btns{display:inline-flex;border:1px solid var(--line);border-radius:6px;overflow:hidden}
-.seg-btns button{border:0;border-radius:0;background:transparent;color:var(--dim)}.seg-btns button+button{border-left:1px solid var(--line)}
-.seg-btns button.on{background:var(--line);color:var(--text)}.seg-btns button:disabled{opacity:.4;cursor:default}
-#rvInfo{font-size:14px;margin-bottom:10px;font-variant-numeric:tabular-nums}#rvInfo b{font-weight:600}#rvInfo .dim{color:var(--dim)}
-#rvMap{height:300px}#rvCum{height:150px}#rvBars{height:130px}
-#rvTop{font-size:13px;color:var(--dim);margin-top:8px;line-height:1.6}#rvTop b{color:var(--text);font-weight:600}
-@media(max-width:700px){.grid{grid-template-columns:1fr}.gear{font-size:110px}.preview{grid-template-columns:1fr}}
-
-
-/* ---- themes (colours only, switched by the header toggle) ---- */
-:root{--g1:#38d39f;--g2:#4db8ff;--glow:none;--hero:var(--text)}
-html[data-theme="rb"]{--bg:#0a1030;--panel:#121a47;--line:#27336f;--text:#f1f3ff;--dim:#8f9acf;--thr:#ffc906;--brk:#ff2d5f;--drs:#5ea2ff;--warn:#ff8a3d;
-  --g1:#ffc906;--g2:#db0a40;--hero:#ffc906;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(219,10,64,.24),transparent 70%)}
-html[data-theme="merc"]{--bg:#08090b;--panel:#14171a;--line:#2a3036;--text:#f2f4f5;--dim:#8d969e;--thr:#00d2be;--brk:#ff4d5e;--drs:#c9d0d6;--warn:#ffb020;
-  --g1:#00d2be;--g2:#c9d0d6;--hero:#00d2be;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(0,210,190,.16),transparent 70%)}
+/* ===== Tokens (default = carbon pit-wall). Team themes below only override colours. ===== */
+:root{--bg:#0b0d10;--panel:#12151a;--panel2:#171b21;--line:#252b34;--text:#e6eaef;--dim:#7d8794;--thr:#2fd38a;--brk:#ff3b4e;--drs:#3fb3ff;--warn:#ffb020;--purple:#b65cff;
+  --g1:#e10600;--g2:#3fb3ff;--glow:none;--hero:var(--text);
+  --mono:"JetBrains Mono",ui-monospace,Consolas,monospace;--cond:"Barlow Condensed","Arial Narrow",sans-serif;--sans:Barlow,system-ui,sans-serif}
+html[data-theme="rb"]{--bg:#0a1030;--panel:#121a47;--line:#27336f;--text:#f1f3ff;--dim:#8f9acf;--thr:#ffc906;--brk:#ff2d5f;--drs:#5ea2ff;--warn:#ff8a3d;--g1:#ffc906;--g2:#db0a40;--hero:#ffc906;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(219,10,64,.24),transparent 70%)}
+html[data-theme="merc"]{--bg:#08090b;--panel:#14171a;--line:#2a3036;--text:#f2f4f5;--dim:#8d969e;--thr:#00d2be;--brk:#ff4d5e;--drs:#c9d0d6;--warn:#ffb020;--g1:#00d2be;--g2:#c9d0d6;--hero:#00d2be;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(0,210,190,.16),transparent 70%)}
 html[data-theme="ferrari"]{--bg:#120707;--panel:#201010;--line:#4a1d1d;--text:#fff4f0;--dim:#c49a94;--thr:#ffeb00;--brk:#ff3b3b;--drs:#f2f2f2;--warn:#ff9a3c;--g1:#dc0000;--g2:#ffeb00;--hero:#ffeb00;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(220,0,0,.26),transparent 70%)}
 html[data-theme="mclaren"]{--bg:#0b0b0d;--panel:#17171b;--line:#2e2e35;--text:#f6f6f6;--dim:#9a9aa5;--thr:#ff8000;--brk:#ee1c5a;--drs:#47c7fc;--warn:#ffd24a;--g1:#ff8000;--g2:#47c7fc;--hero:#ff8000;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(255,128,0,.22),transparent 70%)}
 html[data-theme="aston"]{--bg:#03130f;--panel:#0a2520;--line:#14463d;--text:#eefaf6;--dim:#7fb3a8;--thr:#cedc00;--brk:#ff4d5e;--drs:#6ee7d4;--warn:#ffb020;--g1:#00a88f;--g2:#cedc00;--hero:#cedc00;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(0,168,143,.22),transparent 70%)}
@@ -72,213 +21,621 @@ html[data-theme="williams"]{--bg:#030a22;--panel:#0b1b50;--line:#1f3a85;--text:#
 html[data-theme="vcarb"]{--bg:#080c22;--panel:#121a48;--line:#2a3a8c;--text:#f4f6ff;--dim:#94a0d8;--thr:#ffffff;--brk:#ff3d57;--drs:#6f8bff;--warn:#ffb020;--g1:#4b6bff;--g2:#ffffff;--hero:#ffffff;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(75,107,255,.26),transparent 70%)}
 html[data-theme="sauber"]{--bg:#040604;--panel:#0f140f;--line:#26331f;--text:#f2fff2;--dim:#8aa28a;--thr:#52e252;--brk:#ff4d5e;--drs:#c8ffc8;--warn:#ffb020;--g1:#52e252;--g2:#b0b0b0;--hero:#52e252;--glow:radial-gradient(1100px 420px at 88% -12%,rgba(82,226,82,.18),transparent 70%)}
 html[data-theme="haas"]{--bg:#0a0a0a;--panel:#171717;--line:#343434;--text:#ffffff;--dim:#9b9b9b;--thr:#ffffff;--brk:#ff2a3d;--drs:#b6babf;--warn:#ffb020;--g1:#e6002b;--g2:#ffffff;--hero:#ff2a3d;--glow:radial-gradient(1100px 420px at 12% -12%,rgba(230,0,43,.2),transparent 70%)}
-body{background:var(--glow),var(--bg)}
-h1{padding-bottom:6px;border-bottom:2px solid transparent;border-image:linear-gradient(90deg,var(--g1),var(--g2) 40%,transparent 85%) 1}
-.gear{color:var(--hero)}
-html[data-theme]:not([data-theme="default"]) .panel{box-shadow:inset 0 2px 0 var(--g1)}
-#lapTable tr.has-trace:hover td{background:color-mix(in srgb,var(--text) 8%,transparent)}
-#themeSel{font:600 13px Barlow,system-ui,sans-serif;padding:3px 8px;border-radius:6px;background:var(--panel);color:var(--text);border:1px solid var(--line)}
-/* ---- one-screen layout ---- */
+html[data-theme]:not([data-theme="default"]){--panel2:color-mix(in srgb,var(--panel) 80%,var(--text) 4%)}
+
+/* ===== Base ===== */
+*{box-sizing:border-box}
 [hidden]{display:none!important}
-body{max-width:none;margin:0;padding:10px 12px;height:100vh;display:flex;flex-direction:column;overflow:hidden;font-size:14px}
-h1{font-size:18px;margin:0 0 6px}
-#revs{margin-bottom:8px}#revs i{height:8px}
-.grid{flex:1;min-height:0;display:grid;grid-template-columns:270px minmax(0,1fr) minmax(0,1.9fr);gap:10px}
-.col{display:flex;flex-direction:column;gap:10px;min-height:0;min-width:0}
-.panel{padding:10px;min-height:0;min-width:0}
+html,body{height:100%}
+body{margin:0;color:var(--text);font:13px var(--sans);display:flex;flex-direction:column;overflow:hidden;
+  background:var(--glow),linear-gradient(color-mix(in srgb,var(--line) 22%,transparent) 1px,transparent 1px) 0 0/100% 24px,linear-gradient(90deg,color-mix(in srgb,var(--line) 22%,transparent) 1px,transparent 1px) 0 0/24px 100%,var(--bg)}
+.mono,.num{font-family:var(--mono);font-variant-numeric:tabular-nums}
+select,button,input{font:600 11px var(--sans);letter-spacing:.04em}
+select,button{background:var(--bg);color:var(--text);border:1px solid var(--line);border-radius:2px;padding:4px 8px;max-width:100%;text-transform:uppercase}
+button{cursor:pointer;white-space:nowrap}button:hover,select:hover{border-color:var(--dim)}
+option,optgroup{text-transform:none;background:var(--panel);color:var(--text)}
+
+/* ===== Header status bar ===== */
+.top{flex:none;display:flex;align-items:stretch;gap:0;height:48px;background:var(--panel);border-bottom:1px solid var(--line);position:relative}
+.top::after{content:"";position:absolute;left:0;right:0;bottom:-1px;height:2px;background:linear-gradient(90deg,var(--g1) 0 220px,var(--g2) 220px 300px,transparent 300px)}
+.brand{display:flex;align-items:center;gap:10px;padding:0 16px 0 12px;border-right:1px solid var(--line);min-width:220px}
+.mark{width:28px;height:28px;background:var(--g1);clip-path:polygon(0 100%,38% 0,100% 0,62% 100%);flex:none}
+.brand b{display:block;font:700 17px/1 var(--cond);letter-spacing:.14em}
+.brand small{display:block;font:500 9.5px/1.4 var(--sans);letter-spacing:.2em;color:var(--dim);margin-top:2px}
+.hc{display:flex;flex-direction:column;justify-content:center;padding:0 14px;border-right:1px solid var(--line);white-space:nowrap;min-width:0}
+.hc small,.k{font:600 9.5px var(--sans);letter-spacing:.16em;color:var(--dim);text-transform:uppercase}
+.hc b{font:500 14px/1.25 var(--mono);font-variant-numeric:tabular-nums}
+.hc b.txt{font:700 15px/1.2 var(--cond);letter-spacing:.06em;text-transform:uppercase;overflow:hidden;text-overflow:ellipsis}
+.sp{flex:1;border-right:1px solid var(--line)}
+.ctl{display:flex;align-items:center;gap:6px;padding:0 12px;border-right:1px solid var(--line)}
+#engVoice{max-width:140px}#engVol{width:64px;accent-color:var(--g1)}
+#engBtn.on{background:var(--g1);border-color:var(--g1);color:#0b0b0b}
+/* Track status uses fixed FIA flag colours: never themed */
+.flag{display:inline-block;padding:1px 8px;border-radius:2px;font:700 12px/1.45 var(--cond)!important;letter-spacing:.12em!important;background:#00b050;color:#ffffff}
+.flag.sc,.flag.vsc{background:#ffd400;color:#111111;animation:blink 1s steps(2) infinite}.flag.form{background:#1e88ff;color:#ffffff}
+.flag.off{background:#2a2f37;color:#8a93a0}
+/* Strategy alert bar: fixed colours too, so a threat always reads as a threat */
+#strat{flex:none;display:flex;align-items:center;gap:12px;margin:8px 8px 0;padding:7px 12px;border:1px solid;border-left-width:6px;font:13px var(--sans);background:#14161a}
+#strat b{font:700 15px var(--cond);letter-spacing:.14em;white-space:nowrap}#strat .lp{font:500 11px var(--mono);color:#8a93a0;margin-left:auto;white-space:nowrap}
+#strat button{background:transparent;border-color:#3a3f48;color:#c9ced6;padding:1px 7px}
+#strat.threat{border-color:#ff2a3a;color:#ffd9dc;background:#2a0f12}#strat.threat b{color:#ff4a58}#strat.threat b::before{content:"▲ ";animation:blink 1s steps(2) infinite}
+#strat.window{border-color:#ffb300;color:#fff1cc;background:#2a2108}#strat.window b{color:#ffc233}
+#strat.info{border-color:#2f9bff;color:#d6ebff;background:#0c1c2e}#strat.info b{color:#55adff}
+#strat.good{border-color:#00c060;color:#d2f7e2;background:#0a2416}#strat.good b{color:#22d47a}
+.ev.strat .ty{color:#ffb300}.ev.strat.threat .ty{color:#ff4a58}.ev.strat.good .ty{color:#22d47a}.ev.strat.info .ty{color:#55adff}
+#status{font:700 12px/1.3 var(--cond);letter-spacing:.12em;text-transform:uppercase;color:var(--warn);display:flex;align-items:center;gap:6px}
+#status::before{content:"";width:7px;height:7px;border-radius:50%;background:currentColor;flex:none}
+#status.live{color:var(--thr)}#status.live::before{animation:blink 1.2s steps(2) infinite}
+@keyframes blink{50%{opacity:.25}}
+
+/* ===== Grid & panels ===== */
+.grid{flex:1;min-height:0;display:grid;grid-template-columns:300px minmax(0,1fr) minmax(0,1.85fr);gap:8px;padding:8px}
+.col{display:flex;flex-direction:column;gap:8px;min-height:0;min-width:0}
+.panel{background:var(--panel);border:1px solid var(--line);border-radius:3px;min-height:0;min-width:0;display:flex;flex-direction:column;position:relative}
+.ph{flex:none;display:flex;align-items:center;gap:10px;height:28px;padding:0 10px;border-bottom:1px solid var(--line);background:var(--panel2)}
+.ph h2{margin:0;font:700 12px var(--cond);letter-spacing:.16em;text-transform:uppercase;display:flex;align-items:center;gap:8px;white-space:nowrap}
+.ph h2::before{content:"";width:3px;height:12px;background:var(--g1)}
+.ph .id{font:500 9.5px var(--mono);color:var(--dim);letter-spacing:.06em}
+.ph .r{margin-left:auto;display:flex;gap:6px;align-items:center;min-width:0}
+.pb{padding:8px 10px;min-height:0;display:flex;flex-direction:column;flex:1}
+.lbl{font:600 9.5px var(--sans);letter-spacing:.14em;color:var(--dim);text-transform:uppercase;margin-bottom:3px}
 .cv{position:relative;min-height:50px;min-width:0}
-.cv>canvas{position:absolute;inset:0;width:100%!important;height:100%!important}
-.scroll{flex:1;min-height:0;overflow:auto}
-.colA .big{flex:none;flex-wrap:wrap;gap:0 16px;align-items:flex-end}
-.colA .gear{font-size:92px}.colA .num{font-size:44px}.colA .big .num[style]{font-size:30px!important}
-.colA>.panel:nth-child(2){flex:none}
-.pedal{height:10px;margin:2px 0 8px}
-.tyresp{flex:1 1 0;display:flex;flex-direction:column}
-.tyresp .tyres{flex:1;min-height:0;gap:8px;align-content:stretch}
-.tyre{padding:6px;min-height:0;display:flex;flex-direction:column;justify-content:center}.tyre .t{font-size:20px}.tyre small{font-size:12px}
-.lapp{flex:0 1 280px;display:flex;flex-direction:column}
-.lap{gap:8px 24px;margin-bottom:6px}.lap .num{font-size:36px}
-#lapTable td{padding:3px 8px}
-.chartp{flex:1 1 0;display:flex;flex-direction:column}.chartp .cv{flex:1}
-#rival,#preview{display:flex;flex-direction:column}
-#rival{flex:1.25 1 0}#preview{flex:1 1 0}
-.pv-head{margin-bottom:6px;gap:6px 14px}
-.preview{flex:1;min-height:0}
+.cv>canvas{position:absolute;inset:0;width:100%!important;height:100%!important;display:block}
+.scroll{flex:1;min-height:0;overflow:auto;scrollbar-width:thin;scrollbar-color:var(--line) transparent}
+.seg-btns{display:inline-flex;border:1px solid var(--line);border-radius:2px;overflow:hidden}
+.seg-btns button{border:0;border-radius:0;background:transparent;color:var(--dim);padding:3px 9px;font-size:10px}
+.seg-btns button+button{border-left:1px solid var(--line)}
+.seg-btns button.on{background:var(--line);color:var(--text)}.seg-btns button:disabled{opacity:.35;cursor:default}
+.legend{display:flex;flex-wrap:wrap;gap:3px 12px;color:var(--dim);font-size:10.5px;margin:5px 0 0;letter-spacing:.02em}
+.legend i{display:inline-block;width:14px;height:0;border-top:2px solid;vertical-align:middle;margin-right:5px}
+.legend i.dash{border-top-style:dashed}.legend i.dot{width:7px;height:7px;border:0;border-radius:50%}
+.empty{color:var(--dim);padding:18px 0;text-align:center;font-size:12px;letter-spacing:.04em}
+
+/* ===== Car / power unit ===== */
+#revs{display:grid;grid-template-columns:repeat(15,1fr);gap:3px;margin-bottom:8px}
+#revs i{height:7px;background:color-mix(in srgb,var(--line) 70%,transparent);transform:skewX(-20deg)}
+#revs i.on{background:var(--thr);box-shadow:0 0 6px var(--thr)}#revs i.on.m{background:var(--brk);box-shadow:0 0 6px var(--brk)}#revs i.on.h{background:var(--drs);box-shadow:0 0 6px var(--drs)}
+.pu{display:grid;grid-template-columns:auto 1fr;gap:0 14px;align-items:end}
+.gear{font:700 96px/.8 var(--cond);color:var(--hero);text-align:center;min-width:64px;padding:4px 6px 2px;border:1px solid var(--line);background:var(--bg)}
+.pu .num{font-size:38px;font-weight:500;line-height:1}.unit{color:var(--dim);font:600 10px var(--sans);letter-spacing:.12em;margin-left:5px}
+.pu .rpm{font-size:20px}
+.chips{display:flex;gap:6px;margin-top:8px}
+.chip{flex:1;text-align:center;padding:3px 0;border:1px solid var(--line);font:700 11px var(--cond);letter-spacing:.14em;color:var(--dim);background:var(--bg)}
+#drs.on{background:var(--drs);border-color:var(--drs);color:#04121d}
+.chip.hot{background:var(--warn);border-color:var(--warn);color:#1a1000}
+
+/* ===== Inputs ===== */
+.inp{display:grid;grid-template-columns:52px 1fr 40px;gap:6px 8px;align-items:center}
+.inp .k{margin:0}.inp .v{font:500 11px var(--mono);text-align:right}
+.bar{height:10px;background:var(--bg);border:1px solid var(--line);position:relative;overflow:hidden}
+.bar b{position:absolute;top:0;bottom:0;left:0;width:0}
+.bar.ctr::after{content:"";position:absolute;left:50%;top:-1px;bottom:-1px;width:1px;background:var(--dim)}
+.bar .tk{position:absolute;top:0;bottom:0;width:1px;background:color-mix(in srgb,var(--line) 90%,var(--text) 10%)}
+
+/* ===== Tyres ===== */
+.tyres{display:grid;grid-template-columns:minmax(0,1fr) 50px minmax(0,1fr);grid-template-rows:1fr 1fr;gap:6px;flex:1;min-height:0}
+.car{grid-column:2;grid-row:1/3;display:flex;align-items:center;justify-content:center}
+.car svg{width:100%;height:100%;max-height:200px}
+.tyre{border:1px solid var(--line);background:var(--bg);padding:8px 10px;display:flex;flex-direction:column;justify-content:space-evenly;min-height:0;position:relative;border-left:3px solid var(--tc,var(--line))}
+.tyre .pos{font:700 11px var(--cond);letter-spacing:.14em;color:var(--dim);white-space:nowrap;overflow:hidden}.tyre .pos span{font-size:9px}@media(max-width:1500px){.tyre .pos span{display:none}}
+.tyre .t{font:500 30px/1 var(--mono);color:var(--tc,var(--text))}
+.tyre .t span{font-size:11px;color:var(--dim);margin-left:3px}
+.tyre small{display:block;font:400 11px/1.5 var(--mono);color:var(--dim);white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.wear{height:4px;background:var(--line);overflow:hidden;margin-top:4px}.wear b{display:block;height:100%;background:var(--thr)}
+
+/* ===== Timing ===== */
+.tm-top{display:flex;align-items:flex-end;gap:14px;flex-wrap:wrap}
+#cur{font:500 34px/1 var(--mono)}
+#delta{font:700 15px var(--mono);padding:3px 8px;border:1px solid var(--line);background:var(--bg);color:var(--dim);min-width:92px;text-align:center}
+#delta.up{color:var(--brk);border-color:color-mix(in srgb,var(--brk) 50%,var(--line))}#delta.dn{color:var(--thr);border-color:color-mix(in srgb,var(--thr) 50%,var(--line))}
+.lb{display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:8px}
+.lb>div{border:1px solid var(--line);background:var(--bg);padding:4px 8px}
+.lb .num{font-size:17px}
+#bestLap{color:var(--purple)}
+.sectors{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;margin-top:6px}
+.sector{border:1px solid var(--line);background:var(--bg);padding:3px 8px 4px;border-top:3px solid var(--line)}
+.sector .num{font-size:14px}.sector small{display:block;font:500 10px var(--mono);color:var(--dim);min-height:13px}
+.sector.cur{border-top-color:var(--text)}.sector.pb{border-top-color:var(--purple)}.sector.pb .num{color:var(--purple)}
+.sector.imp{border-top-color:var(--thr)}.sector.imp .num{color:var(--thr)}.sector.slow{border-top-color:var(--warn)}.sector.slow .num{color:var(--warn)}
+table.tt{width:100%;border-collapse:collapse;font:12px var(--mono);font-variant-numeric:tabular-nums}
+.tt th{text-transform:uppercase;position:sticky;top:0;background:var(--panel);font:600 9.5px var(--sans);letter-spacing:.14em;color:var(--dim);text-align:right;padding:4px 6px;border-bottom:1px solid var(--line)}
+.tt td{padding:3px 6px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);text-align:right;white-space:nowrap}
+.tt th:first-child,.tt td:first-child{text-align:left}
+#lapTable tr.best td:nth-child(2){color:var(--purple);font-weight:700}
+#lapTable td.spb{color:var(--purple)}
+#lapTable tr.bad td:nth-child(2){color:var(--warn);text-decoration:line-through}
+#lapTable tr.skip td{color:var(--dim)}
+#lapTable tr.has-trace{cursor:pointer}#lapTable tr.has-trace:hover td{background:color-mix(in srgb,var(--text) 7%,transparent)}
+#lapTable tr.sel td:first-child{box-shadow:inset 3px 0 var(--drs)}
+.tag{display:inline-block;font:700 9px/1.5 var(--cond);letter-spacing:.1em;padding:0 4px;margin-left:3px;border:1px solid currentColor;border-radius:2px;vertical-align:1px}
+.tag.inv{color:var(--warn)}.tag.pit{color:var(--drs)}.tag.sc{color:var(--warn)}
+
+/* ===== Engineer / events ===== */
+#engCap{font:500 12px var(--mono);padding:6px 8px;border:1px solid var(--line);border-left:3px solid var(--g1);background:var(--bg);margin-bottom:6px;min-height:30px}
+#engCap::before{content:"RADIO ▸ ";color:var(--dim);font-size:10px;letter-spacing:.1em}
+#cornHead{font-size:11px;color:var(--dim);margin-bottom:4px}
+#cornTable td:nth-child(3){color:var(--brk);font-weight:700}
+#cornTable td:last-child{text-align:left;font-family:var(--sans);color:var(--dim);white-space:normal}
+.ev{display:grid;grid-template-columns:62px 34px 52px 1fr;gap:6px;padding:3px 2px;border-bottom:1px solid color-mix(in srgb,var(--line) 60%,transparent);font:11.5px var(--mono);align-items:baseline}
+.ev .tm,.ev .lp{color:var(--dim);font-size:10.5px}
+.ev .ty{font:700 9.5px/1.5 var(--cond);letter-spacing:.1em;text-align:center;border:1px solid currentColor;border-radius:2px;color:var(--dim)}
+.ev .tx{font-family:var(--sans);font-size:12px}
+.ev.pb .ty{color:var(--purple)}.ev.flag .ty,.ev.inv .ty{color:var(--warn)}.ev.lap .ty{color:var(--text)}.ev.pit .ty,.ev.radio .ty{color:var(--drs)}
+.ev.pos .ty{color:var(--thr)}.ev.tyre .ty{color:var(--brk)}
+.ev.new{animation:flash 1.2s ease-out}@keyframes flash{from{background:color-mix(in srgb,var(--g1) 30%,transparent)}}
+#evCount{font:600 9.5px var(--mono);margin-left:4px;padding:0 4px;background:var(--line);border-radius:2px}
+
+/* ===== Analysis panels ===== */
+.preview{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.9fr);gap:12px;flex:1;min-height:0}
 .preview>div{display:flex;flex-direction:column;min-height:0}
-#rvInfo{margin-bottom:6px}
-#readout{min-height:0;margin-top:2px}#rvTop{margin-top:2px;line-height:1.4}
-#pvEmpty,#rvEmpty{padding:14px 0}
-.engp{flex:0 1 200px;display:flex;flex-direction:column}
-#engCtl{display:inline-flex;gap:6px;align-items:center}
-#engBtn,#engVoice{font:600 13px Barlow,system-ui,sans-serif;padding:3px 8px;border-radius:6px;background:var(--panel);color:var(--text);border:1px solid var(--line);cursor:pointer}
-#engBtn.on{background:var(--g1);color:#06120f;border-color:var(--g1)}#engVoice{max-width:150px}#engVol{width:70px}
-#cornTable{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}#cornTable td{padding:3px 8px;border-top:1px solid var(--line)}
-#cornTable td:nth-child(3){color:var(--brk);font-weight:600}
-@media(max-width:1100px),(max-height:620px){
-  .engp{flex:none}
-  body{height:auto;overflow:auto}
+.pv-charts canvas{cursor:crosshair;touch-action:none}
+.ph label{color:var(--dim);font:600 9.5px var(--sans);letter-spacing:.14em;display:flex;gap:5px;align-items:center;text-transform:uppercase}
+.ph select{max-width:200px;padding:2px 6px;font-size:10.5px}
+.ph button{padding:2px 8px;font-size:10px}
+#readout,#rvRead{font:11px var(--mono);color:var(--dim);min-height:16px;margin-top:4px}#readout b,#rvRead b{color:var(--text);font-weight:500}
+#rvInfo{font:12px var(--mono);margin-bottom:6px;display:flex;flex-wrap:wrap;gap:4px 14px;align-items:baseline}
+#rvInfo b{font-weight:700}#rvInfo .dim{color:var(--dim);font-family:var(--sans);font-size:10px;letter-spacing:.12em;text-transform:uppercase}
+#rvInfo .who{font:700 14px var(--cond);letter-spacing:.08em}
+#rvTop{font:11px var(--mono);color:var(--dim);margin-top:4px;line-height:1.55}#rvTop b{color:var(--text);font-weight:500}
+#rival{flex:1.25 1 0}#preview{flex:1 1 0}
+
+/* ===== Column sizing (one-screen) ===== */
+.colA .p-pu{flex:none}.colA .p-in{flex:none}.colA .p-ty{flex:1 1 0}
+.colB .p-tm{flex:1.15 1 0}.colB .p-en{flex:1 1 0}.colB .p-ch{flex:.7 1 0}
+.p-ch .cv{flex:1}
+
+/* ===== Smaller screens: stack and scroll ===== */
+@media(max-width:1500px){.ph .id,.ctl>.k{display:none}#engVoice{max-width:90px}}
+@media(max-width:1280px){.hc.opt{display:none}}
+@media(max-width:1100px),(max-height:640px){
+  body{height:auto;overflow:auto}html{height:auto}
+  .top{height:auto;flex-wrap:wrap}.hc,.ctl,.brand{padding-block:6px}.sp{display:none}
   .grid{display:flex;flex-direction:column}.col{display:contents}
-  .panel,.tyresp,.lapp,.chartp,#rival,#preview{flex:none}
-  .preview{flex:none;grid-template-columns:1fr}.cv{flex:none!important;height:170px}
-  .tyresp .tyres{flex:none}
+  .panel,#rival,#preview{flex:none!important}
+  .preview{grid-template-columns:1fr}.cv{flex:none!important;height:180px}
+  .tyres{min-height:220px}.scroll{max-height:320px}
 }
 </style>
 </head>
 <body>
-<h1>F1 25 Telemetry <select id="themeSel" title="Team theme"><option value="default">Default</option><option value="rb">Red Bull Racing</option><option value="ferrari">Ferrari</option><option value="mclaren">McLaren</option><option value="merc">Mercedes</option><option value="aston">Aston Martin</option><option value="alpine">Alpine</option><option value="williams">Williams</option><option value="vcarb">Racing Bulls</option><option value="sauber">Kick Sauber</option><option value="haas">Haas</option></select> <span id="engCtl"><button id="engBtn">Engineer: Off</button> <select id="engVoice" title="Engineer voice"></select> <input id="engVol" type="range" min="0" max="1" step="0.05" value="0.9" title="Radio volume"></span> <span id="status">Waiting for data…</span></h1>
-<div id="revs"></div>
+<header class="top">
+  <div class="brand"><span class="mark"></span><div><b>PIT WALL</b><small>TELEMETRY &amp; TIMING</small></div></div>
+  <div class="hc"><small>Session</small><b class="txt" id="sess">—</b></div>
+  <div class="hc"><small>Lap</small><b id="hLap">—</b></div>
+  <div class="hc"><small>Position</small><b id="hPos">—</b></div>
+  <div class="hc"><small>Track status</small><b id="hFlag" class="flag off">NO DATA</b></div>
+  <div class="hc"><small>Closest rival<span id="hRivN"></span></small><b id="hRiv">—</b></div>
+  <div class="hc opt"><small>Session time</small><b id="hEl">00:00:00</b></div>
+  <div class="sp"></div>
+  <div class="ctl"><span class="k">Livery</span><select id="themeSel" title="Team theme"><option value="default">Pit wall (default)</option><option value="rb">Red Bull Racing</option><option value="ferrari">Ferrari</option><option value="mclaren">McLaren</option><option value="merc">Mercedes</option><option value="aston">Aston Martin</option><option value="alpine">Alpine</option><option value="williams">Williams</option><option value="vcarb">Racing Bulls</option><option value="sauber">Kick Sauber</option><option value="haas">Haas</option></select></div>
+  <div class="ctl" id="engCtl"><button id="engBtn">Radio off</button><select id="engVoice" title="Engineer voice"></select><input id="engVol" type="range" min="0" max="1" step="0.05" value="0.9" title="Radio volume"></div>
+  <div class="hc"><small>Link · <span id="hHz">0 Hz</span></small><span id="status">Waiting</span></div>
+  <div class="hc opt"><small>Local</small><b id="hClock">--:--:--</b></div>
+</header>
+
+<div id="strat" hidden><b id="stratTag"></b><span id="stratTxt"></span><span class="lp" id="stratLap"></span><button id="stratX" title="Dismiss">✕</button></div>
 <div class="grid">
 <div class="col colA">
-  <div class="panel big">
-    <div><div class="lbl">Gear</div><div class="gear" id="gear">N</div></div>
-    <div><div class="lbl">Speed</div><div><span class="num" id="speed">0</span><span class="unit">km/h</span></div>
-      <div class="lbl" style="margin-top:10px">RPM</div><div><span class="num" style="font-size:36px" id="rpm">0</span></div></div>
-    <div style="margin-left:auto"><span id="drs">DRS</span></div>
-  </div>
-  <div class="panel">
-    <div class="lbl">Throttle <span id="thrV"></span></div><div class="pedal"><b id="thr" style="background:var(--thr)"></b></div>
-    <div class="lbl">Brake <span id="brkV"></span></div><div class="pedal"><b id="brk" style="background:var(--brk)"></b></div>
-    <div class="lbl">Steering <span id="strV"></span></div><div class="pedal"><b id="str" style="background:var(--dim)"></b></div>
-    <div class="lbl">Engine temperature: <span id="eng">–</span> °C</div>
-  </div>
-  <div class="panel tyresp">
-    <div class="lbl">Tyres: surface / inner temperature (°C), pressure (psi), brake temperature (°C)</div>
-    <div class="tyres" id="tyres"></div>
-  </div>
+  <section class="panel p-pu">
+    <div class="ph"><h2>Power unit</h2><span class="id">CH-01</span></div>
+    <div class="pb">
+      <div id="revs"></div>
+      <div class="pu">
+        <div><div class="lbl">Gear</div><div class="gear" id="gear">N</div></div>
+        <div>
+          <div class="lbl">Speed</div><div><span class="num" id="speed">0</span><span class="unit">KM/H</span></div>
+          <div class="lbl" style="margin-top:8px">Engine</div><div><span class="num rpm" id="rpm">0</span><span class="unit">RPM</span></div>
+        </div>
+      </div>
+      <div class="chips"><span class="chip" id="drs">DRS</span><span class="chip" id="engChip"><span id="eng">–</span>°C ICE</span></div>
+    </div>
+  </section>
+  <section class="panel p-in">
+    <div class="ph"><h2>Driver inputs</h2><span class="id">CH-02</span></div>
+    <div class="pb">
+      <div class="inp">
+        <span class="k">Throttle</span><div class="bar"><b id="thr" style="background:var(--thr)"></b><i class="tk" style="left:25%"></i><i class="tk" style="left:50%"></i><i class="tk" style="left:75%"></i></div><span class="v" id="thrV">0%</span>
+        <span class="k">Brake</span><div class="bar"><b id="brk" style="background:var(--brk)"></b><i class="tk" style="left:25%"></i><i class="tk" style="left:50%"></i><i class="tk" style="left:75%"></i></div><span class="v" id="brkV">0%</span>
+        <span class="k">Steer</span><div class="bar ctr"><b id="str" style="background:var(--drs)"></b></div><span class="v" id="strV">0%</span>
+      </div>
+    </div>
+  </section>
+  <section class="panel p-ty">
+    <div class="ph"><h2>Tyres &amp; brakes</h2><span class="id">CH-03</span></div>
+    <div class="pb"><div class="tyres" id="tyres"></div></div>
+  </section>
 </div>
+
 <div class="col colB">
-  <div class="panel lapp">
-    <div class="lap">
-      <div><div class="lbl"><span id="sess"></span>Lap <span id="lapNum">–</span> · Sector <span id="sec">–</span></div><div class="num" id="cur">–:––.–––</div></div>
-      <div><div class="lbl">Last lap</div><div class="num" id="lastLap">–:––.–––</div></div>
-      <div><div class="lbl">Best lap</div><div class="num" id="bestLap" style="color:var(--thr)">–:––.–––</div></div>
+  <section class="panel p-tm">
+    <div class="ph"><h2>Timing</h2><span class="id">TM-01</span><span class="r k">Lap <span id="lapNum" class="mono" style="color:var(--text)">–</span> · Sector <span id="sec" class="mono" style="color:var(--text)">–</span></span></div>
+    <div class="pb">
+      <div class="tm-top">
+        <div><div class="lbl">Current lap</div><div id="cur">–:––.–––</div></div>
+        <div><div class="lbl">Δ Best (live)</div><div id="delta">NO REF</div></div>
+      </div>
+      <div class="sectors" id="sectors"></div>
+      <div class="lb">
+        <div><div class="lbl">Last lap</div><div class="num" id="lastLap">–:––.–––</div></div>
+        <div><div class="lbl">Best lap</div><div class="num" id="bestLap">–:––.–––</div></div>
+      </div>
+      <div class="scroll" style="margin-top:8px"><table class="tt" id="lapTable"><thead><tr><th>Lap</th><th>Time</th><th>Gap</th><th>S1</th><th>S2</th><th>S3</th></tr></thead><tbody></tbody></table></div>
     </div>
-    <div class="scroll"><table id="lapTable"><tbody></tbody></table></div>
-  </div>
-  <div class="panel engp"><div class="lbl">Race engineer: <span id="engCap">radio off. Press "Engineer" to switch it on.</span></div>
-    <div class="lbl" id="cornHead">Time lost last lap: finish a lap to see where you lose time.</div>
-    <div class="scroll"><table id="cornTable"><tbody></tbody></table></div></div>
-  <div class="panel chartp"><div class="lbl">Last 10 seconds: speed, throttle, brake</div><div class="cv" style="flex:1"><canvas id="chart"></canvas></div></div>
+  </section>
+  <section class="panel p-en">
+    <div class="ph"><h2>Engineer</h2><span class="id">EN-01</span>
+      <div class="r"><div class="seg-btns" id="enTabs"><button data-t="ev" class="on">Event log<span id="evCount">0</span></button><button data-t="co">Corner loss</button></div></div></div>
+    <div class="pb">
+      <div id="engCap">radio off. Switch it on in the top bar.</div>
+      <div class="scroll" id="evWrap"><div id="evLog"></div></div>
+      <div class="scroll" id="coWrap" hidden>
+        <div id="cornHead">Time lost last lap: finish a lap to see where you lose time.</div>
+        <table class="tt" id="cornTable"><tbody></tbody></table>
+      </div>
+    </div>
+  </section>
+  <section class="panel p-ch">
+    <div class="ph"><h2>Live trace</h2><span class="id">10 s</span>
+      <div class="r legend" style="margin:0"><span><i id="lgSpd"></i>Speed</span><span><i style="border-color:var(--thr)"></i>Thr</span><span><i style="border-color:var(--brk)"></i>Brk</span></div></div>
+    <div class="pb"><div class="cv" style="flex:1"><canvas id="chart"></canvas></div></div>
+  </section>
 </div>
+
 <div class="col colC">
-  <div class="panel" id="rival">
-    <div class="pv-head">
-      <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Time vs rival</div>
-      <div class="seg-btns" id="rvWho"><button data-r="ahead" class="on">Car ahead</button><button data-r="behind">Car behind</button></div>
-      <div class="seg-btns" id="rvLapSel"><button data-v="current" class="on">This lap</button><button data-v="last">Last lap</button></div>
-    </div>
-    <div id="rvInfo"></div>
-    <div id="rvEmpty">Waiting for a car directly ahead or behind you in the order.</div>
-    <div class="preview" id="rvBody" hidden>
-      <div>
-        <div class="cv" style="flex:1"><canvas id="rvMap"></canvas></div>
-        <div class="legend"><span><i style="border-color:var(--thr)"></i>You gained</span><span><i style="border-color:var(--brk)"></i>You lost</span><span><i style="border-color:#3a4454"></i>No comparison yet</span><span><i class="dot" style="background:var(--drs)"></i>You</span><span><i class="dot" style="background:var(--warn)"></i>Rival</span></div>
-      </div>
-      <div class="pv-charts">
-        <div class="lbl">Net time gained on the rival through the lap (s) · above 0 = you're quicker so far</div>
-        <div class="cv" style="flex:3"><canvas id="rvCum"></canvas></div>
-        <div class="lbl" style="margin-top:8px">Gained (+) or lost (−) in each 100 m mini-sector (s)</div>
-        <div class="cv" style="flex:2"><canvas id="rvBars"></canvas></div>
-        <div id="rvRead" class="legend" style="min-height:18px"></div>
-        <div id="rvTop"></div>
-      </div>
-    </div>
-  </div>
-  <div class="panel" id="preview">
-    <div class="pv-head">
-      <div class="lbl" style="margin:0;font-weight:600;color:var(--text)">Lap preview</div>
-      <label>Lap <select id="pvLap"></select></label>
-      <label>Compare with <select id="pvCmp"></select></label>
-      <button id="pvFlip" title="Mirror the map if the track looks back-to-front">Flip map</button>
-    </div>
-    <div id="pvEmpty">No lap traces yet. Complete a lap and it will appear here.</div>
-    <div class="preview" id="pvBody" hidden>
-      <div>
-        <div class="cv" style="flex:1"><canvas id="map"></canvas></div>
-        <div class="legend"><span><i class="dot" style="background:var(--thr)"></i>Full throttle</span><span><i class="dot" style="background:var(--brk)"></i>Braking</span><span><i class="dot" style="background:#8a95a5"></i>Partial / coasting</span><span id="lgLive" hidden><i class="dot" style="background:var(--drs)"></i>You (live)</span></div>
-      </div>
-      <div class="pv-charts">
-        <div class="lbl">Speed (km/h) over lap distance</div>
-        <div class="cv" style="flex:3"><canvas id="spd"></canvas></div>
-        <div class="lbl" style="margin-top:8px">Throttle and brake (%)</div>
-        <div class="cv" style="flex:2"><canvas id="ped"></canvas></div>
-        <div class="legend" id="pvLegend"></div>
-        <div id="readout">Hover over the graphs to inspect a point on the lap.</div>
+  <section class="panel" id="rival">
+    <div class="ph"><h2>Time vs rival</h2><span class="id">AN-01</span>
+      <div class="r">
+        <div class="seg-btns" id="rvWho"><button data-r="ahead" class="on">Car ahead</button><button data-r="behind">Car behind</button></div>
+        <div class="seg-btns" id="rvLapSel"><button data-v="current" class="on">This lap</button><button data-v="last">Last lap</button></div>
+      </div></div>
+    <div class="pb">
+      <div id="rvInfo"></div>
+      <div id="rvEmpty" class="empty">Waiting for a car directly ahead or behind you in the order.</div>
+      <div class="preview" id="rvBody" hidden>
+        <div>
+          <div class="cv" style="flex:1"><canvas id="rvMap"></canvas></div>
+          <div class="legend"><span><i style="border-color:var(--thr)"></i>Gained</span><span><i style="border-color:var(--brk)"></i>Lost</span><span><i style="border-color:#3a4454"></i>No data</span><span><i class="dot" style="background:var(--drs)"></i>You</span><span><i class="dot" style="background:var(--warn)"></i>Rival</span></div>
+        </div>
+        <div class="pv-charts" style="display:flex;flex-direction:column;min-height:0">
+          <div class="lbl">Net time vs rival through the lap (s) · above 0 = you're quicker</div>
+          <div class="cv" style="flex:3"><canvas id="rvCum"></canvas></div>
+          <div class="lbl" style="margin-top:6px">Gained (+) / lost (−) per 100 m mini-sector (s)</div>
+          <div class="cv" style="flex:2"><canvas id="rvBars"></canvas></div>
+          <div id="rvRead"></div>
+          <div id="rvTop"></div>
+        </div>
       </div>
     </div>
-  </div>
+  </section>
+  <section class="panel" id="preview">
+    <div class="ph"><h2>Lap analysis</h2><span class="id">AN-02</span>
+      <div class="r">
+        <label>Lap <select id="pvLap"></select></label>
+        <label>Ref <select id="pvCmp"></select></label>
+        <button id="pvFlip" title="Mirror the map if the track looks back-to-front">Flip map</button>
+      </div></div>
+    <div class="pb">
+      <div id="pvEmpty" class="empty">No lap traces yet. Complete a lap and it will appear here.</div>
+      <div class="preview" id="pvBody" hidden>
+        <div>
+          <div class="cv" style="flex:1"><canvas id="map"></canvas></div>
+          <div class="legend"><span><i class="dot" style="background:var(--thr)"></i>Full throttle</span><span><i class="dot" style="background:var(--brk)"></i>Braking</span><span><i class="dot" style="background:var(--dim)"></i>Partial</span><span id="lgLive" hidden><i class="dot" style="background:var(--drs)"></i>You (live)</span></div>
+        </div>
+        <div class="pv-charts" style="display:flex;flex-direction:column;min-height:0">
+          <div class="lbl">Speed (km/h) vs lap distance</div>
+          <div class="cv" style="flex:3"><canvas id="spd"></canvas></div>
+          <div class="lbl" style="margin-top:6px">Throttle / brake (%)</div>
+          <div class="cv" style="flex:2"><canvas id="ped"></canvas></div>
+          <div class="legend" id="pvLegend"></div>
+          <div id="readout">Hover over the graphs to inspect a point on the lap.</div>
+        </div>
+      </div>
+    </div>
+  </section>
 </div>
 </div>
 <script>
 const $ = id => document.getElementById(id);
-const T = { speed: '#e9edf2', text: '#e9edf2', thr: '#38d39f', brk: '#ff4d5e', grid: '#2a323f' }; // live-chart colours, refreshed by readTheme()
+const T = { speed: '#e6eaef', text: '#e6eaef', thr: '#2fd38a', brk: '#ff3b4e', grid: '#252b34' }; // live-chart colours, refreshed by readTheme()
 const revs = $('revs'); for (let i = 0; i < 15; i++) revs.appendChild(document.createElement('i'));
-const names = ['Rear left', 'Rear right', 'Front left', 'Front right'], order = [2, 3, 0, 1]; // show front row first
-$('tyres').innerHTML = order.map(i => `<div class="tyre"><small>${names[i]}</small><div class="t" id="ty${i}">–</div><small id="tp${i}"></small><small id="tw${i}">Wear –</small><div class="wear"><b id="tb${i}" style="width:0"></b></div></div>`).join('');
+// Tyre data arrives as RL, RR, FL, FR. Tiles are placed around a top-down car: fronts on the top row.
+const TYRE = [{ n: 'RL', area: '2/1' }, { n: 'RR', area: '2/3' }, { n: 'FL', area: '1/1' }, { n: 'FR', area: '1/3' }];
+$('tyres').innerHTML = TYRE.map((t, i) => `<div class="tyre" id="tt${i}" style="grid-area:${t.area}"><div class="pos">${t.n} <span style="font-weight:500;letter-spacing:.06em">SURF/INNER °C</span></div><div class="t" id="ty${i}">–</div><small id="tp${i}">– psi</small><small id="tk${i}">BRK –</small><small id="tw${i}">WEAR –</small><div class="wear"><b id="tb${i}" style="width:0"></b></div></div>`).join('') +
+  `<div class="car"><svg viewBox="0 0 60 200" fill="none" stroke="currentColor" stroke-width="1.5" style="color:var(--dim)">
+    <path d="M22 6h16v10H22z M10 16h40v6H10z"/><path d="M26 22h8l3 40 7 18v50l-6 40h-16l-6-40V80l7-18z"/>
+    <circle cx="30" cy="96" r="5"/><path d="M14 168h32v8H14z M24 176h12v8H24z" /><path d="M20 70H8 M40 70h12 M18 150H8 M42 150h10" stroke-dasharray="2 2"/></svg></div>`;
 const hist = [], MAX = 300; // ~10 s at 30 Hz
 let lastMsg = 0;
 
 function draw() {
   const c = $('chart'), dpr = devicePixelRatio || 1, w = c.clientWidth, h = c.clientHeight;
-  c.width = w * dpr; c.height = h * dpr;
-  const g = c.getContext('2d'); g.scale(dpr, dpr);
+  if (c.width !== w * dpr || c.height !== h * dpr) { c.width = w * dpr; c.height = h * dpr; }
+  const g = c.getContext('2d'); g.setTransform(dpr, 0, 0, dpr, 0, 0); g.clearRect(0, 0, w, h);
   g.strokeStyle = T.grid; g.lineWidth = 1;
   for (let i = 1; i < 4; i++) { g.beginPath(); g.moveTo(0, h * i / 4); g.lineTo(w, h * i / 4); g.stroke(); }
+  for (let s = 1; s < 10; s++) { const x = w - s * 30 / (MAX - 1) * w; g.globalAlpha = .4; g.beginPath(); g.moveTo(x, 0); g.lineTo(x, h); g.stroke(); g.globalAlpha = 1; } // 1 s gridlines
   const line = (key, max, color) => {
-    g.strokeStyle = color; g.lineWidth = 2; g.beginPath();
-    hist.forEach((d, i) => { const x = i / (MAX - 1) * w, y = h - Math.min(1, d[key] / max) * (h - 4) - 2; i ? g.lineTo(x, y) : g.moveTo(x, y); });
+    g.strokeStyle = color; g.lineWidth = 1.6; g.beginPath();
+    hist.forEach((d, i) => { const x = (i + MAX - hist.length) / (MAX - 1) * w, y = h - Math.min(1, d[key] / max) * (h - 4) - 2; i ? g.lineTo(x, y) : g.moveTo(x, y); });
     g.stroke();
   };
-  line('speed', 350, T.speed); line('throttle', 1, T.thr); line('brake', 1, T.brk);
+  line('throttle', 1, T.thr); line('brake', 1, T.brk); line('speed', 350, T.speed);
 }
 
+const tyreCol = t => t < 80 ? 'var(--drs)' : t <= 105 ? 'var(--thr)' : t <= 112 ? 'var(--warn)' : 'var(--brk)'; // by carcass (inner) temperature
 function render(d) {
   $('gear').textContent = d.gear < 0 ? 'R' : d.gear === 0 ? 'N' : d.gear;
   $('speed').textContent = d.speed; $('rpm').textContent = d.rpm;
   $('drs').classList.toggle('on', !!d.drs);
   $('thr').style.width = d.throttle * 100 + '%'; $('thrV').textContent = Math.round(d.throttle * 100) + '%';
   $('brk').style.width = d.brake * 100 + '%'; $('brkV').textContent = Math.round(d.brake * 100) + '%';
-  $('str').style.width = (d.steer + 1) * 50 + '%'; $('strV').textContent = (d.steer * 100).toFixed(0) + '%';
-  $('eng').textContent = d.engineTemp;
-  [...revs.children].forEach((el, i) => {
-    el.className = i < d.revPct / 100 * 15 ? 'on ' + (i < 5 ? '' : i < 10 ? 'm' : 'h') : '';
-  });
+  const s = Math.max(-1, Math.min(1, d.steer)); // steering grows out from the centre line
+  $('str').style.left = (s < 0 ? 50 + s * 50 : 50) + '%'; $('str').style.width = Math.abs(s) * 50 + '%';
+  $('strV').textContent = (s < 0 ? 'L' : s > 0 ? 'R' : '') + Math.abs(s * 100).toFixed(0);
+  $('eng').textContent = d.engineTemp; $('engChip').classList.toggle('hot', d.engineTemp > 115);
   // Rev strip: green first 5 lights, red next 5, blue last 5 (like the real wheel)
-  [...revs.children].forEach((el, i) => { if (el.classList.contains('on')) el.className = 'on ' + (i < 5 ? '' : i < 10 ? 'm' : 'h'); });
+  [...revs.children].forEach((el, i) => { el.className = i < d.revPct / 100 * 15 ? 'on ' + (i < 5 ? '' : i < 10 ? 'm' : 'h') : ''; });
   for (let i = 0; i < 4; i++) {
-    const warn = d.tyreInner[i] > 110 ? 'color:var(--warn)' : '';
-    $('ty' + i).innerHTML = `<span style="${warn}">${d.tyreSurf[i]} / ${d.tyreInner[i]}</span>`;
-    $('tp' + i).textContent = `${d.tyrePress[i].toFixed(1)} psi · brake ${d.brakesTemp[i]}°`;
+    $('tt' + i).style.setProperty('--tc', tyreCol(d.tyreInner[i]));
+    $('ty' + i).innerHTML = `${d.tyreSurf[i]}<span>/ ${d.tyreInner[i]}</span>`;
+    $('tp' + i).textContent = `${d.tyrePress[i].toFixed(1)} psi`;
+    $('tk' + i).textContent = `BRK ${d.brakesTemp[i]}°C`;
   }
   hist.push(d); if (hist.length > MAX) hist.shift();
 }
 
 const SC = { 1: 'SC', 2: 'VSC', 3: 'formation' };
 const fmt = ms => { if (!ms) return '–:––.–––'; const m = Math.floor(ms / 60000), s = ((ms % 60000) / 1000).toFixed(3).padStart(6, '0'); return m + ':' + s; };
+const fs3 = ms => ms == null ? '' : (ms / 1000).toFixed(3);
+const clean = l => !l.invalid && !l.pit && !l.sc; // pit, safety-car and invalid laps don't count towards bests
 function renderLap(d) {
   if (d.lap) {
     $('lapNum').textContent = d.lap.num; $('sec').textContent = d.lap.sector + 1;
     $('cur').textContent = fmt(d.lap.cur); $('lastLap').textContent = fmt(d.lap.last);
   }
-  if (d.session) $('sess').textContent = [d.session.track, d.session.type].filter(Boolean).join(' · ') + (d.session.track ? ' · ' : '');
-  // Pit, safety-car and invalid laps don't count towards the best lap or the gap column
-  const clean = l => !l.invalid && !l.pit && !l.sc;
-  const valid = (d.laps || []).filter(clean), best = valid.length ? Math.min(...valid.map(l => l.ms)) : 0;
+  if (d.session) $('sess').textContent = [d.session.track, d.session.type].filter(Boolean).join(' · ') || '—';
+  const laps = d.laps || [], valid = laps.filter(clean), best = valid.length ? Math.min(...valid.map(l => l.ms)) : 0;
+  const bs = bestSectors(laps);
   $('bestLap').textContent = fmt(best);
-  const tags = l => [l.invalid && 'invalid', l.pit && 'pit', SC[l.sc]].filter(Boolean).map(t => ` (${t})`).join('');
-  $('lapTable').tBodies[0].innerHTML = (d.laps || []).slice().reverse().slice(0, 8).map(l =>
-    `<tr data-id="${d.session.uid}_${l.lap}" class="${clean(l) && l.ms === best ? 'best' : ''} ${l.invalid ? 'bad' : ''} ${l.pit || l.sc ? 'skip' : ''} ${pv.index.has(d.session.uid + '_' + l.lap) ? 'has-trace' : ''} ${pv.a && pv.a.id === d.session.uid + '_' + l.lap ? 'sel' : ''}"><td>Lap ${l.lap}</td><td>${fmt(l.ms)}${tags(l)}</td><td>${best && clean(l) ? '+' + ((l.ms - best) / 1000).toFixed(3) : ''}</td></tr>`).join('');
-  if (d.wear) d.wear.forEach((w, i) => { $('tw' + i).textContent = 'Wear ' + w + '%'; $('tb' + i).style.width = Math.min(100, w) + '%'; $('tb' + i).style.background = w > 60 ? 'var(--brk)' : w > 40 ? 'var(--warn)' : 'var(--thr)'; });
+  const tags = l => (l.invalid ? '<span class="tag inv">INV</span>' : '') + (l.pit ? '<span class="tag pit">PIT</span>' : '') + (SC[l.sc] ? `<span class="tag sc">${SC[l.sc].toUpperCase()}</span>` : '');
+  $('lapTable').tBodies[0].innerHTML = laps.slice().reverse().map(l => {
+    const id = d.session.uid + '_' + l.lap, ss = ST.laps.get(l.lap) || [];
+    return `<tr data-id="${id}" class="${clean(l) && l.ms === best ? 'best' : ''} ${l.invalid ? 'bad' : ''} ${l.pit || l.sc ? 'skip' : ''} ${pv.index.has(id) ? 'has-trace' : ''} ${pv.a && pv.a.id === id ? 'sel' : ''}">` +
+      `<td>${l.lap}${tags(l)}</td><td>${fmt(l.ms)}</td><td>${best && clean(l) ? (l.ms === best ? '—' : '+' + fs3(l.ms - best)) : ''}</td>` +
+      [0, 1, 2].map(k => `<td class="${clean(l) && ss[k] != null && ss[k] === bs[k] ? 'spb' : ''}">${fs3(ss[k])}</td>`).join('') + '</tr>';
+  }).join('');
+  if (d.wear) d.wear.forEach((w, i) => { $('tw' + i).textContent = 'WEAR ' + w.toFixed(1) + '%'; $('tb' + i).style.width = Math.min(100, w) + '%'; $('tb' + i).style.background = w > 60 ? 'var(--brk)' : w > 40 ? 'var(--warn)' : 'var(--thr)'; });
 }
+
+// ================= Sector times (measured in the browser from the lap timer at each sector change) =================
+const ST = { uid: null, lap: null, sec: 0, cut: [], ok: false, laps: new Map() }; // cut[k] = lap time at the end of sector k
+function bestSectors(laps) {
+  const ok = new Set(laps.filter(clean).map(l => l.lap)), b = [null, null, null];
+  for (const [n, s] of ST.laps) if (ok.has(n)) s.forEach((v, k) => { if (v != null && (b[k] == null || v < b[k])) b[k] = v; });
+  return b;
+}
+function sectorTick(d) {
+  const L = d.lap; if (!L || !d.session) return;
+  if (d.session.uid !== ST.uid) { ST.uid = d.session.uid; ST.laps.clear(); ST.lap = null; }
+  if (ST.lap === null || L.num < ST.lap) { // first data, or a flashback across the line
+    for (const k of [...ST.laps.keys()]) if (k >= L.num) ST.laps.delete(k);
+    ST.cut = []; ST.ok = L.sector === 0 && L.cur < 3000;
+  } else if (L.num > ST.lap) { // crossed the line: close the lap
+    const done = (d.laps || []).find(l => l.lap === ST.lap), ms = done ? done.ms : L.last;
+    if (ST.ok && ST.cut.length === 2 && ms) ST.laps.set(ST.lap, [ST.cut[0], ST.cut[1] - ST.cut[0], ms - ST.cut[1]]);
+    ST.cut = []; ST.ok = true;
+  } else if (L.sector < ST.sec) ST.cut = ST.cut.slice(0, L.sector); // flashback within the lap
+  else for (let k = ST.sec; k < L.sector; k++) ST.cut[k] = L.cur;
+  ST.lap = L.num; ST.sec = L.sector;
+  renderSectors(d);
+}
+function renderSectors(d) {
+  const L = d.lap, bs = bestSectors(d.laps || []), prev = ST.laps.get(L.num - 1) || [];
+  $('sectors').innerHTML = [0, 1, 2].map(k => {
+    const start = k ? ST.cut[k - 1] : 0, done = ST.cut[k] != null && (k === 0 || start != null);
+    let t = null, cls = '', note = bs[k] != null ? 'PB ' + fs3(bs[k]) : '';
+    if (done) { t = ST.cut[k] - start; cls = bs[k] == null || t <= bs[k] ? 'pb' : prev[k] != null && t < prev[k] ? 'imp' : 'slow'; if (bs[k] != null) note = (t - bs[k] >= 0 ? '+' : '−') + fs3(Math.abs(t - bs[k])); }
+    else if (k === L.sector && start != null) { t = L.cur - start; cls = 'cur'; }
+    return `<div class="sector ${cls}"><div class="lbl" style="margin:0">S${k + 1}</div><div class="num">${t == null ? '––.–––' : fs3(t)}</div><small>${note}</small></div>`;
+  }).join('');
+}
+
+// ================= Live delta to the best clean lap of this session =================
+const DL = { id: null, t: null, loading: false };
+function interpTime(t, d) { // lap time at distance d, linear between samples
+  if (d <= t.d[0]) return t.t[0]; const n = t.d.length; if (d >= t.d[n - 1]) return null;
+  let lo = 0, hi = n - 1; while (hi - lo > 1) { const m = (lo + hi) >> 1; t.d[m] <= d ? lo = m : hi = m; }
+  return t.t[lo] + (t.t[hi] - t.t[lo]) * (d - t.d[lo]) / ((t.d[hi] - t.d[lo]) || 1);
+}
+function deltaTick(d) {
+  const el = $('delta'), L = d.lap; if (!L || !d.session) return;
+  const ref = pv.list.filter(m => m.uid === d.session.uid && isClean(m) && m.lap !== L.num).sort((a, b) => a.ms - b.ms)[0];
+  if (!ref) { el.textContent = 'NO REF'; el.className = ''; return; }
+  if (DL.id !== ref.id && !DL.loading) { DL.loading = true; loadTrace(ref.id).then(t => { DL.id = ref.id; DL.t = t; DL.loading = false; }); }
+  if (!DL.t || DL.id !== ref.id) return;
+  const rt = interpTime(DL.t, L.dist); if (rt == null || L.dist < 0) { el.textContent = '––.–––'; el.className = ''; return; }
+  const dt = L.cur - rt; el.textContent = (dt >= 0 ? '+' : '−') + fs3(Math.abs(dt)); el.className = dt >= 0 ? 'up' : 'dn';
+}
+
+// ================= Header: session clock, link rate, track status, position =================
+const HD = { uid: null, t0: 0, n: 0, hz: 0, sc: null, pos: null };
+const p2 = n => String(n).padStart(2, '0'), hms = s => `${p2(Math.floor(s / 3600))}:${p2(Math.floor(s / 60) % 60)}:${p2(Math.floor(s) % 60)}`;
+const FLAG = { 0: ['GREEN', ''], 1: ['SAFETY CAR', 'sc'], 2: ['VIRTUAL SC', 'vsc'], 3: ['FORMATION', 'form'] };
+function headerTick(d) {
+  HD.n++;
+  if (d.session && d.session.uid !== HD.uid) { HD.uid = d.session.uid; HD.t0 = Date.now(); }
+  const f = FLAG[d.sc] || FLAG[0]; $('hFlag').textContent = f[0]; $('hFlag').className = 'flag ' + f[1];
+  if (d.lap) { $('hLap').textContent = d.lap.num; $('hPos').textContent = d.lap.pos ? 'P' + d.lap.pos : '—'; }
+}
+setInterval(() => {
+  const now = new Date(); $('hClock').textContent = now.toTimeString().slice(0, 8);
+  $('hHz').textContent = HD.n + ' Hz'; HD.n = 0;
+  if (HD.t0) $('hEl').textContent = hms((Date.now() - HD.t0) / 1000);
+}, 1000);
+
+// ================= Event log =================
+const EV = { list: [], uid: null, lapN: null, inv: null, pit: 0, sc: null, pos: null, wear: 0, best: null, link: true };
+function logEv(type, text, cls) {
+  const lap = EV.lapN != null ? 'L' + EV.lapN : '';
+  EV.list.unshift({ tm: new Date().toTimeString().slice(0, 8), lap, type, text, cls: cls || type.toLowerCase() });
+  if (EV.list.length > 150) EV.list.pop();
+  $('evLog').innerHTML = EV.list.map((e, i) => `<div class="ev ${e.cls}${i === 0 ? ' new' : ''}"><span class="tm">${e.tm}</span><span class="lp">${e.lap}</span><span class="ty">${e.type}</span><span class="tx">${e.text}</span></div>`).join('');
+  $('evCount').textContent = EV.list.length;
+}
+function eventTick(d) {
+  if (!d.session) return;
+  const L = d.lap, laps = d.laps || [];
+  if (d.session.uid !== EV.uid) {
+    const first = EV.uid === null; EV.uid = d.session.uid; EV.lapN = L ? L.num : null; EV.pos = L ? L.pos : null; EV.sc = d.sc; EV.wear = 0;
+    const v = laps.filter(clean); EV.best = v.length ? Math.min(...v.map(l => l.ms)) : null; EV.seen = laps.length ? laps[laps.length - 1].lap : 0;
+    logEv('SYS', `${first ? 'Link established' : 'New session'} · ${[d.session.track, d.session.type].filter(Boolean).join(' · ') || 'unknown session'}`, 'sys');
+    return;
+  }
+  if (!L) return;
+  const last = laps[laps.length - 1];
+  if (last && last.lap > (EV.seen || 0)) { // a lap was completed
+    EV.seen = last.lap; EV.lapN = last.lap;
+    const ok = clean(last), d0 = EV.best;
+    if (ok && (d0 == null || last.ms < d0)) { logEv('PB', `Lap ${last.lap} · ${fmt(last.ms)}${d0 ? ' · −' + fs3(d0 - last.ms) : ''} personal best`, 'pb'); EV.best = last.ms; }
+    else logEv('LAP', `Lap ${last.lap} · ${fmt(last.ms)}${ok && d0 ? ' · +' + fs3(last.ms - d0) : ''}${last.invalid ? ' · deleted' : last.pit ? ' · pit lap' : last.sc ? ' · ' + SC[last.sc] : ''}`, 'lap');
+  } else if (last && last.lap < (EV.seen || 0)) { EV.seen = last.lap; logEv('SYS', `Flashback to lap ${L.num}`, 'sys'); }
+  else if (!last && EV.seen) EV.seen = 0;
+  EV.lapN = L.num;
+  if (L.invalid && EV.inv !== L.num) { EV.inv = L.num; logEv('INV', `Lap ${L.num} invalidated (track limits)`, 'inv'); }
+  if (L.pit && !EV.pit) logEv('PIT', L.pit === 1 ? 'Pit entry' : 'In pit lane', 'pit');
+  if (!L.pit && EV.pit) logEv('PIT', 'Pit exit', 'pit');
+  EV.pit = L.pit;
+  if (d.sc !== EV.sc) { logEv('FLAG', d.sc ? (FLAG[d.sc] || FLAG[0])[0] + ' deployed' : 'Track clear · green flag', 'flag'); EV.sc = d.sc; }
+  // position changes are logged once they have held for 1.5 s, so side-by-side battles don't flood the log
+  if (L.pos && L.pos !== EV.pos) { if (EV.posAt == null || EV.posCand !== L.pos) { EV.posCand = L.pos; EV.posAt = Date.now(); }
+    else if (Date.now() - EV.posAt > 1500) { if (EV.pos) logEv('POS', `P${EV.pos} → P${L.pos} (${L.pos < EV.pos ? 'gained' : 'lost'} ${Math.abs(EV.pos - L.pos)})`, 'pos'); EV.pos = L.pos; EV.posAt = null; } }
+  else EV.posAt = null;
+  const w = d.wear ? Math.max(...d.wear) : 0;
+  if (w < 10) EV.wear = 0;
+  for (const th of [30, 50, 70]) if (w >= th && EV.wear < th) { EV.wear = th; logEv('TYRE', `Wear ${w.toFixed(0)}% · worst ${TYRE[d.wear.indexOf(w)].n}`, 'tyre'); }
+}
+document.querySelectorAll('#enTabs button').forEach(b => b.onclick = () => {
+  document.querySelectorAll('#enTabs button').forEach(x => x.classList.toggle('on', x === b));
+  $('evWrap').hidden = b.dataset.t !== 'ev'; $('coWrap').hidden = b.dataset.t !== 'co';
+});
+
+const setStatus = (txt, live) => { $('status').textContent = txt; $('status').className = live ? 'live' : '';
+  if (live !== EV.link && EV.uid) logEv('SYS', live ? 'Telemetry link restored' : 'Telemetry link lost · ' + txt, 'sys'); EV.link = live; };
 const es = new EventSource('/stream');
-es.onmessage = e => { lastMsg = Date.now(); $('status').textContent = 'Live'; $('status').className = 'live'; const d = JSON.parse(e.data);
-  if (d.warn) { $('status').textContent = d.warn; $('status').className = ''; return; }
-  render(d); renderLap(d); pvLive(d); rvLive(d); engineerTick(d); };
-es.onerror = () => { $('status').textContent = 'Server disconnected'; $('status').className = ''; };
-setInterval(() => { if (lastMsg && Date.now() - lastMsg > 2000) { $('status').textContent = 'No data from game'; $('status').className = ''; } }, 1000);
+es.onmessage = e => { lastMsg = Date.now(); const d = JSON.parse(e.data);
+  if (d.warn) { setStatus(d.warn, false); return; }
+  setStatus('Live', true);
+  headerTick(d); render(d); sectorTick(d); renderLap(d); deltaTick(d); eventTick(d); strategyTick(d); pvLive(d); rvLive(d); engineerTick(d); };
+es.onerror = () => setStatus('Server down', false);
+setInterval(() => { if (lastMsg && Date.now() - lastMsg > 2000) setStatus('No data', false); }, 1000);
 (function loop() { draw(); requestAnimationFrame(loop); })();
+// ================= Strategy: closest rival + undercut / overcut warnings =================
+// Closest rival: of the cars directly ahead and behind in the race order (lapped cars excluded), the one with the
+// smaller time gap, once it has been the closest car for 5 laps in a row. Passing a car for position makes it the rival at once.
+const TYRE_C = { 16: 'S', 17: 'M', 18: 'H', 7: 'I', 8: 'W' };
+const STR = { uid: null, rival: null, cand: null, streak: 0, lastLap: null, myPos: null, aheadIdx: null, rPit: 0, myPit: 0, duel: null, alert: null };
+const nm = c => c ? (c.name || 'Car ' + (c.i + 1)) : '—';
+function stratAlert(cls, title, text, me, radio) {
+  STR.alert = { cls, title, text, lap: me.lap };
+  $('stratTag').textContent = title; $('stratTxt').textContent = text; $('stratLap').textContent = 'LAP ' + me.lap;
+  $('strat').className = cls; $('strat').hidden = false;
+  logEv('STRAT', `${title} · ${text}`, 'strat ' + cls);
+  if (radio) say(radio, title + ': ' + text, true);
+}
+$('stratX').onclick = () => { $('strat').hidden = true; };
+function setRival(c, why) {
+  if (!c || c.i === STR.rival) return;
+  STR.rival = c.i; STR.cand = c.i; STR.streak = Math.max(STR.streak, 5);
+  logEv('STRAT', `Closest rival: ${nm(c)} (P${c.pos}) · ${why}`, 'strat');
+}
+function strategyTick(d) {
+  if (!d.field || !d.lap || d.me == null || !d.session) return;
+  if (d.session.uid !== STR.uid) { Object.assign(STR, { uid: d.session.uid, rival: null, cand: null, streak: 0, lastLap: null, myPos: null, aheadIdx: null, rPit: 0, myPit: 0, duel: null, alert: null, pass: null }); $('strat').hidden = true; }
+  const F = new Map(d.field.map(c => [c.i, c])), me = F.get(d.me); if (!me || !me.pos) return;
+  const laps = d.laps || [], refLap = (laps.length && laps[laps.length - 1].ms) || d.lap.last || 90000;
+  const gapOf = c => c.lead - me.lead; // ms, + = they are behind you
+  const lapped = c => Math.abs(gapOf(c)) >= refLap * 0.97; // a lap or more apart: not a fight for position
+  const ahead = d.field.find(c => c.pos === me.pos - 1), behind = d.field.find(c => c.pos === me.pos + 1);
+  const cand = [ahead, behind].filter(c => c && !lapped(c)).sort((a, b) => Math.abs(gapOf(a)) - Math.abs(gapOf(b)))[0];
+
+  // Passed a car for position on track (not because it pitted): it becomes the rival straight away
+  // (the pass has to stick for 2 s, so a side-by-side moment doesn't swap the rival back and forth)
+  if (STR.myPos != null && me.pos < STR.myPos && STR.aheadIdx != null) {
+    const p = F.get(STR.aheadIdx);
+    if (p && p.pos > me.pos && !p.pit && !lapped(p)) STR.pass = { i: p.i, t: Date.now() };
+  }
+  if (STR.pass) { const p = F.get(STR.pass.i);
+    if (!p || p.pos < me.pos || p.pit) STR.pass = null;
+    else if (Date.now() - STR.pass.t >= 2000) { setRival(p, 'passed for position'); STR.pass = null; } }
+  STR.myPos = me.pos; STR.aheadIdx = ahead ? ahead.i : null;
+
+  // Closest-car streak, counted at each lap you complete
+  if (STR.lastLap == null) { STR.cand = cand ? cand.i : null; STR.streak = 0; }
+  else if (me.lap > STR.lastLap) {
+    const c = cand ? cand.i : null;
+    if (c != null && c === STR.cand) STR.streak++; else { STR.cand = c; STR.streak = c != null ? 1 : 0; }
+    if (STR.streak >= 5 && c !== STR.rival) setRival(cand, 'closest for 5 laps');
+  } else if (me.lap < STR.lastLap) STR.streak = Math.max(0, STR.streak - (STR.lastLap - me.lap)); // flashback
+  STR.lastLap = me.lap;
+
+  // Pit stops: who goes first decides undercut / overcut
+  const R = STR.rival != null ? F.get(STR.rival) : null, myPit = d.lap.pit > 0 ? 1 : 0;
+  const rEnter = R && R.pit > 0 && !STR.rPit, meEnter = myPit && !STR.myPit;
+  let du = STR.duel;
+  if (rEnter) {
+    const g = gapOf(R);
+    if (!du || du.done) {
+      du = STR.duel = { first: 'rival', i: R.i, g0: g, lap: me.lap, rIn: true, mIn: false, out: null, done: false };
+      if (g > 0) stratAlert('threat', 'UNDERCUT THREAT', `${nm(R)} (P${R.pos}, ${fs3(g)} s behind) has pitted. Box this lap to cover.`, me,
+        ['Undercut threat.', `Car behind has pitted, gap was ${(g / 1000).toFixed(1)} seconds.`, 'Box this lap to cover, box box.']);
+      else stratAlert('window', 'OVERCUT WINDOW', `${nm(R)} (P${R.pos}, ${fs3(-g)} s ahead) has pitted. Stay out and push, or box next lap to cover.`, me,
+        ['Car ahead has pitted.', 'Overcut window, stay out and push.']);
+    } else if (du.first === 'me' && du.i === R.i) stratAlert('info', 'RIVAL RESPONDS', `${nm(R)} pits to cover your stop.`, me);
+  }
+  if (meEnter && R) {
+    if (!du || du.done) {
+      if (!R.pit) {
+        const g = gapOf(R);
+        du = STR.duel = { first: 'me', i: R.i, g0: g, lap: me.lap, rIn: false, mIn: true, out: null, done: false };
+        if (g < 0) stratAlert('info', 'UNDERCUT ATTEMPT', `Pitting before ${nm(R)} (${fs3(-g)} s ahead). Push the out-lap.`, me, ['Undercut on the car ahead.', 'Push on the out lap.']);
+        else stratAlert('window', 'OVERCUT RISK', `${nm(R)} (${fs3(g)} s behind) is staying out. Push the out-lap to keep position.`, me, ['Car behind is staying out.', 'Push on the out lap.']);
+      }
+    } else if (du.first === 'rival' && du.i === R.i) stratAlert('info', 'COVERING', `Boxing to cover ${nm(R)}.`, me);
+  }
+  STR.rPit = R ? R.pit : 0; STR.myPit = myPit;
+
+  // Outcome: one full lap after both cars have stopped and left the pit lane
+  if (du && !du.done) {
+    const r = F.get(du.i);
+    if (!r) du.done = true;
+    else {
+      if (r.pit) du.rIn = true; if (myPit) du.mIn = true; // pit-lane visits since the duel started (stop counters vary by game version)
+      const bothStopped = du.rIn && du.mIn && !r.pit && !myPit;
+      if (bothStopped && du.out == null) du.out = me.lap;
+      if (du.out != null && me.lap > du.out) {
+        du.done = true;
+        const g = gapOf(r), swing = g - du.g0, sw = `${swing >= 0 ? '+' : '−'}${fs3(Math.abs(swing))} s swing`, pos = `${g > 0 ? 'ahead by ' : 'behind by '}${fs3(Math.abs(g))} s`;
+        const ok = g > 0, wasAhead = du.g0 > 0;
+        const title = du.first === 'me' ? (wasAhead ? (ok ? 'POSITION HELD' : 'OVERCUT LOST') : (ok ? 'UNDERCUT WORKED' : 'UNDERCUT FAILED'))
+                                         : (wasAhead ? (ok ? 'UNDERCUT DEFENDED' : 'UNDERCUT LOST') : (ok ? 'OVERCUT WORKED' : 'OVERCUT FAILED'));
+        stratAlert(ok ? 'good' : 'threat', title, `vs ${nm(r)}: ${pos} (${sw}).`, me, [`${title.toLowerCase()}.`, `${ok ? 'You are ahead' : 'You are behind'} of ${nm(r)}.`]);
+      } else if (!bothStopped && me.lap > du.lap + 3) { // the other car never stopped in response
+        du.done = true; stratAlert('info', 'NO RESPONSE', `${du.first === 'me' ? nm(r) + ' has not stopped' : 'You did not cover ' + nm(r)} after 3 laps.`, me);
+      }
+    }
+  }
+  if (STR.alert && !$('strat').hidden && me.lap > STR.alert.lap + 1) $('strat').hidden = true; // alerts clear after about a lap
+
+  // Header readout
+  const show = R || (STR.cand != null ? F.get(STR.cand) : null);
+  if (!show) { $('hRiv').textContent = '—'; $('hRivN').textContent = ''; return; }
+  const g = gapOf(show), ty = TYRE_C[show.tyre];
+  $('hRiv').innerHTML = `P${show.pos} ${nm(show).toUpperCase()} <span style="color:${g < 0 ? 'var(--brk)' : 'var(--thr)'}">${g < 0 ? '−' : '+'}${fs3(Math.abs(g))}</span>`;
+  $('hRivN').textContent = R ? ` · ${ty ? ty + ' ' + show.age + 'L · ' : ''}${show.stops} stop${show.stops === 1 ? '' : 's'}` : ` · candidate ${Math.min(STR.streak, 5)}/5`;
+}
+
 // ================= Lap preview =================
-const C = { speed: '#e9edf2', thr: '#38d39f', brk: '#ff4d5e', partial: '#8a95a5', grid: '#2a323f', dim: '#8a95a5', live: '#4db8ff', panel: '#1b212b' };
+const C = { speed: '#e6eaef', thr: '#2fd38a', brk: '#ff3b4e', partial: '#7d8794', grid: '#252b34', dim: '#7d8794', live: '#3fb3ff', panel: '#12151a' };
 const pv = { index: new Map(), list: [], a: null, b: null, cache: new Map(), hover: null, follow: true, ver: -1, live: null, flip: false };
 try { pv.flip = localStorage.getItem('f1-flip') === '1'; } catch (e) {}
 const label = m => `Lap ${m.lap} · ${fmt(m.ms)}${m.invalid ? ' (invalid)' : ''}${m.pit ? ' (pit)' : ''}${SC[m.sc] ? ` (${SC[m.sc]})` : ''}`;
@@ -357,7 +714,7 @@ const PAD = { l: 38, r: 8, t: 8, b: 20 };
 function chart(c, series, yMax, ticks, unit) {
   const { g, w, h } = sizeCanvas(c), maxD = Math.max(...[pv.a, pv.b].filter(Boolean).map(t => t.d[t.d.length - 1]));
   const X = d => PAD.l + d / maxD * (w - PAD.l - PAD.r), Y = v => h - PAD.b - v / yMax * (h - PAD.t - PAD.b);
-  g.font = '11px Barlow, sans-serif'; g.fillStyle = C.dim; g.strokeStyle = C.grid; g.lineWidth = 1;
+  g.font = '10px "JetBrains Mono", monospace'; g.fillStyle = C.dim; g.strokeStyle = C.grid; g.lineWidth = 1;
   ticks.forEach(v => { g.beginPath(); g.moveTo(PAD.l, Y(v)); g.lineTo(w - PAD.r, Y(v)); g.stroke(); g.textAlign = 'right'; g.fillText(v + unit, PAD.l - 5, Y(v) + 4); });
   g.textAlign = 'center';
   const step = maxD > 4000 ? 1000 : 500;
@@ -377,7 +734,7 @@ function chart(c, series, yMax, ticks, unit) {
 
 function drawMap() {
   const c = $('map'), { g, w, h } = sizeCanvas(c), a = pv.a;
-  if (!a || !a.hasPos) { g.fillStyle = C.dim; g.font = '13px Barlow, sans-serif'; g.textAlign = 'center'; g.fillText('No position data for this lap', w / 2, h / 2); return; }
+  if (!a || !a.hasPos) { g.fillStyle = C.dim; g.font = '12px "JetBrains Mono", monospace'; g.textAlign = 'center'; g.fillText('No position data for this lap', w / 2, h / 2); return; }
   const pts = [a, pv.b].filter(t => t && t.hasPos);
   const xs = pts.flatMap(t => t.x.filter(v => v !== null)), zs = pts.flatMap(t => t.z.filter(v => v !== null));
   const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
@@ -469,15 +826,15 @@ function drawRival() {
   const cmp = r[rv.view], g = cmp ? cmp.gained : [], seg = rv.d.seg;
   const name = r.driver && r.driver.name ? `${r.driver.name}${r.driver.number ? ' #' + r.driver.number : ''}` : `Car ${r.idx + 1}`;
   const net = g.reduce((a, v) => a + (v || 0), 0), known = g.filter(v => v != null).length;
-  const gap = r.gap ? ` · <span class="dim">gap</span> <b>${(r.gap / 1000).toFixed(3)} s</b>` : '';
+  const gap = r.gap ? `<span><span class="dim">Interval</span> <b>${(r.gap / 1000).toFixed(3)}</b></span>` : '';
   const lapTxt = !cmp ? '<span class="dim">no lap to compare yet</span>' :
     `<span class="dim">${rv.view === 'current' ? 'this lap so far' : 'last lap (' + cmp.lap + ')'}${cmp.rivalLap !== cmp.lap ? ` vs their lap ${cmp.rivalLap}` : ''}:</span> ` +
     (known ? `<b style="color:${net >= 0 ? C.thr : C.brk}">${secs(net)} s</b> ${net >= 0 ? 'gained' : 'lost'}` : '<span class="dim">no mini-sectors yet</span>');
-  $('rvInfo').innerHTML = `<b>P${r.pos} · ${name}</b> <span class="dim">(${who === 'ahead' ? 'car ahead' : 'car behind'}${forced ? ', nobody ' + rv.who + ' of you' : ''})</span>${gap} · ${lapTxt}`;
+  $('rvInfo').innerHTML = `<span class="who" style="color:var(--warn)">P${r.pos} ${name.toUpperCase()}</span><span class="dim">${who === 'ahead' ? 'car ahead' : 'car behind'}${forced ? ' · nobody ' + rv.who + ' of you' : ''}</span>${gap}<span>${lapTxt}</span>`;
 
   // --- map ---
   const c = $('rvMap'), { g: x, w, h } = sizeCanvas(c), keys = [...rv.shape.keys()].sort((a, b) => a - b);
-  if (keys.length < 20) { x.fillStyle = C.dim; x.font = '13px Barlow, sans-serif'; x.textAlign = 'center'; x.fillText('Drawing the track as you drive…', w / 2, h / 2); }
+  if (keys.length < 20) { x.fillStyle = C.dim; x.font = '12px "JetBrains Mono", monospace'; x.textAlign = 'center'; x.fillText('Drawing the track as you drive…', w / 2, h / 2); }
   else {
     const pts = keys.map(k => [k * 10, ...rv.shape.get(k)]), xs = pts.map(p => p[1]), zs = pts.map(p => p[2]);
     const minX = Math.min(...xs), maxX = Math.max(...xs), minZ = Math.min(...zs), maxZ = Math.max(...zs);
@@ -499,7 +856,7 @@ function drawRival() {
   let run = 0; const cum = g.map(v => (run += v || 0, v == null ? null : run)), maxC = Math.max(50, ...cum.map(v => Math.abs(v || 0)));
   const axes = (cv, max) => {
     const { g: q, w, h } = sizeCanvas(cv), X = i => PAD.l + i / n * (w - PAD.l - PAD.r), Y = v => PAD.t + (1 - (v / max + 1) / 2) * (h - PAD.t - PAD.b);
-    q.font = '11px Barlow, sans-serif'; q.fillStyle = C.dim; q.textAlign = 'right';
+    q.font = '10px "JetBrains Mono", monospace'; q.fillStyle = C.dim; q.textAlign = 'right';
     [-max, 0, max].forEach(v => { q.strokeStyle = v ? C.grid : '#56606f'; q.lineWidth = 1; q.beginPath(); q.moveTo(PAD.l, Y(v)); q.lineTo(w - PAD.r, Y(v)); q.stroke();
       q.fillText(v ? secs(v).replace(/0+$/, '').replace(/\.$/, '') : '0', PAD.l - 5, Y(v) + 4); });
     q.textAlign = 'center'; const step = n * seg > 4000 ? 1000 : 500;
@@ -546,6 +903,7 @@ function readTheme() {
   Object.assign(T, { text: v('--text'), thr: v('--thr'), brk: v('--brk'), grid: v('--line') });
   T.speed = T.thr.toLowerCase() === '#ffffff' ? v('--drs') : T.text; // keep speed and throttle lines distinct on white-accent themes
   Object.assign(C, { speed: v('--text'), thr: v('--thr'), brk: v('--brk'), partial: v('--dim'), grid: v('--line'), dim: v('--dim'), live: v('--drs'), panel: v('--panel') });
+  $('lgSpd').style.borderColor = T.speed;
   const cur = document.documentElement.dataset.theme || 'default';
   $('themeSel').value = cur;
   drawPreview(); drawRival();
@@ -612,7 +970,7 @@ function squelch(len) { // radio key-up / key-down noise burst
   f.type = 'bandpass'; f.frequency.value = 2200; g.gain.value = 0.25 * Eng.vol; src.buffer = buf; src.connect(f).connect(g).connect(AC.destination); src.start();
 }
 function speak(m) {
-  Eng.speaking = true; $('engCap').textContent = m.cap; squelch(0.12);
+  Eng.speaking = true; $('engCap').textContent = m.cap; logEv('RADIO', m.cap, 'radio'); squelch(0.12);
   const next = i => {
     if (i >= m.parts.length || !Eng.on) { squelch(0.08); Eng.speaking = false; return; }
     const u = new SpeechSynthesisUtterance(m.parts[i]); // one sentence at a time (long utterances get cut off by Chrome)
@@ -635,8 +993,8 @@ if ('speechSynthesis' in window) { speechSynthesis.onvoiceschanged = fillVoices;
 $('engVoice').onchange = e => { Eng.voice = speechSynthesis.getVoices().find(v => v.name === e.target.value) || null; try { localStorage.setItem('f1-voice', e.target.value); } catch (err) {} say(['Radio check, how do you hear me?']); };
 $('engVol').oninput = e => { Eng.vol = +e.target.value; };
 $('engBtn').onclick = () => {
-  Eng.on = !Eng.on; $('engBtn').classList.toggle('on', Eng.on); $('engBtn').textContent = 'Engineer: ' + (Eng.on ? 'On' : 'Off');
-  if (!Eng.on) { Eng.q = []; Eng.speaking = false; if ('speechSynthesis' in window) speechSynthesis.cancel(); $('engCap').textContent = 'radio off. Press "Engineer" to switch it on.'; return; }
+  Eng.on = !Eng.on; $('engBtn').classList.toggle('on', Eng.on); $('engBtn').textContent = 'Radio ' + (Eng.on ? 'on' : 'off');
+  if (!Eng.on) { Eng.q = []; Eng.speaking = false; if ('speechSynthesis' in window) speechSynthesis.cancel(); $('engCap').textContent = 'radio off. Switch it on in the top bar.'; return; }
   try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) {}
   if (!('speechSynthesis' in window)) { $('engCap').textContent = 'this browser has no speech synthesis, captions only.'; return; }
   say(['Radio check, how do you hear me?'], 'Radio check, how do you hear me?', true);
