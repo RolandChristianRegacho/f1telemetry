@@ -96,6 +96,27 @@ Changing these values changes the cache key, so new clips are generated automati
 
 Download another `.onnx` + `.onnx.json` pair into `piper\voices\` and open the FX panel (or reload the page). The voice appears in the list. Multi-speaker voices (aru, semaine, vctk) use speaker 0. In the desktop app you can also drop voices into `Documents\F1Telemetry\piper\voices\`.
 
+### Voices that need Piper 1.5+
+
+Voices added or retrained in 2025, such as `en_US-mike-medium`, were made with Piper 1.5 or later. Their `.onnx.json` has `"piper_version": "1.5.0"` or higher. The 2023 `piper.exe` can't read them: it crashes with code 3221226505 ("Phonemes must be one codepoint"). The dashboard detects these voices and says so in the caption. The newer Piper is a Python package; it plays both the new and the older voices. Install it into the project's `piper\py` folder:
+
+1. Install Python 3.9 or newer if you don't have it: from https://www.python.org/downloads/ (tick "Add python.exe to PATH"), or with `winget install Python.Python.3.12`.
+2. Run these commands:
+
+```bat
+cd C:\Users\roland.regacho\Pictures\f1telemetry
+py -m venv piper\py
+piper\py\Scripts\python -m pip install piper-tts
+echo Box this lap. | piper\py\Scripts\piper.exe -m piper\voices\en_US-mike-medium.onnx -f test.wav
+start test.wav
+```
+
+When `piper\py\Scripts\piper.exe` exists, the server uses it instead of `piper\piper.exe`. You don't need to restart; reload the page. The FX panel shows which engine is active. To use a Piper installed elsewhere, set the environment variable `F1T_PIPER_EXE` to its full path.
+
+Each sentence takes about 1 to 2 seconds the first time (Piper loads the voice for every sentence); repeated lines come from the cache instantly, and the next sentence is prepared while the current one plays.
+
+In the packaged desktop app, the `py` folder is bundled too. It relies on the Python installed on your PC, so a copy of the app on another PC needs that PC's own `piper\py`. You can create it inside `Documents\F1Telemetry\piper\`.
+
 ### Troubleshooting the voice
 
 | Symptom | Fix |
@@ -104,6 +125,7 @@ Download another `.onnx` + `.onnx.json` pair into `piper\voices\` and open the F
 | "no Piper voices" | Put both the `.onnx` and `.onnx.json` in `piper\voices\`. A download sometimes saves the json as `.json.txt`; rename it. |
 | "Piper exited with code 3221225781" (or -1073741515) | A DLL is missing. Copy the whole unzipped folder, not only `piper.exe`. If that doesn't fix it, install the Microsoft Visual C++ Redistributable (x64). |
 | "Piper was blocked from starting" or no sound and the antivirus flags it | Windows Defender or SmartScreen can quarantine `piper.exe`. Restore it and add the `piper` folder as an exclusion. If Windows blocked the zip, right-click it, choose Properties > **Unblock**, then unzip again. |
+| "needs the newer Piper 1.5+", or "crashed (code 0xC0000409)" / code 3221226505 | The voice was made for Piper 1.5+. Install it as described in "Voices that need Piper 1.5+", or use an older voice such as `en_GB-alan-medium`. |
 | "Piper failed: … Load model … failed" | The `.onnx` download is incomplete (an HTML page or a few KB). Download it again. |
 | "audio not enabled yet, click the page once" | Browsers only allow sound after a click. Click anywhere. The desktop app doesn't need this. |
 
