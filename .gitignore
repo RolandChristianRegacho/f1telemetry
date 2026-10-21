@@ -4,3 +4,16 @@ laps-demo.csv
 
 # Copies of files shared in the Claude app
 Claude outputs/
+
+# Piper engine and voices (large binaries; download them, see README.md)
+piper/*
+!piper/README.txt
+!piper/voices/
+piper/voices/*
+!piper/voices/README.txt
+
+# Generated speech cache, server log, Node/Electron build output
+tts-cache/
+server.log
+node_modules/
+dist/

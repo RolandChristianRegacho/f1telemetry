@@ -1,12 +1,53 @@
 // F1 25 telemetry relay: UDP (game) -> Server-Sent Events (browser). No npm install needed.
 // Run:  node server.js          (live from the game)
 //       node server.js --demo   (fake data to test the dashboard)
-// Completed laps are saved to laps.csv next to this file (demo laps go to laps-demo.csv),
+// Optional: --http-port 3000  --udp-port 20777  --data-dir <folder>  --piper-dir <folder>
+//           (or the environment variables F1T_HTTP_PORT, F1T_UDP_PORT, F1T_DATA_DIR, F1T_PIPER_DIR)
+// Completed laps are saved to laps.csv in the data folder (default: next to this file; demo laps go to laps-demo.csv),
 // and each lap's trace (speed/throttle/brake/position over distance) to traces/ (demo: traces-demo/).
+// The race engineer can speak with a local Piper neural voice: see /tts below and README.md.
 const dgram = require('dgram'), http = require('http'), fs = require('fs'), path = require('path');
-const UDP_PORT = 20777, HTTP_PORT = 3000, DEMO = process.argv.includes('--demo');
-const CSV = path.join(__dirname, DEMO ? 'laps-demo.csv' : 'laps.csv');
-const TRACE_DIR = path.join(__dirname, DEMO ? 'traces-demo' : 'traces');
+const crypto = require('crypto'), { spawn } = require('child_process');
+const arg = name => { const i = process.argv.indexOf('--' + name); return i > 0 && process.argv[i + 1] && !process.argv[i + 1].startsWith('--') ? process.argv[i + 1] : null; };
+const opt = (name, env, def) => arg(name) || process.env[env] || def;
+
+// ======================= CONFIG: change paths and settings here =======================
+const CONFIG = {
+  httpPort: +opt('http-port', 'F1T_HTTP_PORT', 3000),
+  udpPort: +opt('udp-port', 'F1T_UDP_PORT', 20777),
+  dataDir: path.resolve(opt('data-dir', 'F1T_DATA_DIR', __dirname)), // laps.csv, traces/, tts-cache/ go here
+  piper: {
+    dir: path.resolve(opt('piper-dir', 'F1T_PIPER_DIR', path.join(__dirname, 'piper'))), // holds piper.exe (keep the whole unzipped Piper folder)
+    exe: process.platform === 'win32' ? 'piper.exe' : 'piper',
+    voicesSub: 'voices',     // voice files (*.onnx + *.onnx.json) live in <dir>\voices
+    lengthScale: 1.0,        // > 1 = slower speech, < 1 = faster (the speed slider overrides it per request)
+    noiseScale: 0.667,       // voice variation; lower = flatter and steadier, higher = more expressive (0.3 to 1)
+    noiseW: 0.8,             // timing variation between phonemes; lower = more robotic rhythm (0.3 to 1)
+    cacheMB: 200,            // tts-cache size cap; oldest-used clips are deleted first
+    timeoutMs: 20000,        // kill Piper if one sentence takes longer than this
+    maxParallel: 2,          // Piper processes at once
+    maxChars: 400,           // longest sentence accepted
+  },
+};
+// ======================================================================================
+
+const UDP_PORT = CONFIG.udpPort, HTTP_PORT = CONFIG.httpPort, DEMO = process.argv.includes('--demo'), DATA = CONFIG.dataDir;
+fs.mkdirSync(DATA, { recursive: true });
+const CSV = path.join(DATA, DEMO ? 'laps-demo.csv' : 'laps.csv');
+const TRACE_DIR = path.join(DATA, DEMO ? 'traces-demo' : 'traces');
+
+// When started by the desktop app (Electron utilityProcess or child_process.fork) report status to it
+const parent = process.parentPort ? { send: m => process.parentPort.postMessage(m) } : process.send ? { send: m => process.send(m) } : null;
+const tell = m => { try { parent && parent.send(m); } catch (e) {} };
+function fatal(which, port, err) {
+  const msg = err.code === 'EADDRINUSE'
+    ? `${which.toUpperCase()} port ${port} is already in use (another telemetry program, or a second copy of this one?).`
+    : `Could not open ${which.toUpperCase()} port ${port}: ${err.message}`;
+  console.error('ERROR: ' + msg + (parent ? '' : ` Close the other program or start with --${which}-port <other port>.`));
+  tell({ type: 'error', which, port, code: err.code, message: msg });
+  process.exit(2);
+}
+let up = 0; const ready = () => { if (++up === 2) tell({ type: 'ready', httpPort: HTTP_PORT, udpPort: UDP_PORT, dataDir: DATA, demo: DEMO }); };
 const HEADER = 'recorded_at,session_uid,track,session_type,lap,time_ms,invalid,pit,sc,wear_RL,wear_RR,wear_FL,wear_FR';
 const clients = new Set();
 const state = { tel: null, lap: null, wear: null, laps: [], warn: null, sc: 0, pos: null, traceVer: 0,
@@ -48,9 +89,107 @@ function push() {
   clients.forEach(res => res.write(msg));
 }
 
+// ---- Race engineer voice: local Piper TTS ----
+// GET /tts/voices          -> { ok, reason, voices: [{ id, name, lang, quality, speakers }] }
+// GET /tts?voice=&text=&speed=  -> audio/wav of one sentence (cached on disk), or JSON { error } with 404/500/503
+const TTS = { cacheDir: path.join(DATA, 'tts-cache'), running: 0, waiting: [], inflight: new Map(), files: new Map(), bytes: 0 };
+const piperExe = () => [CONFIG.piper.dir, path.join(DATA, 'piper')].map(d => path.join(d, CONFIG.piper.exe)).find(f => fs.existsSync(f)) || null;
+function piperVoices() { // voices from <piper dir>\voices, plus <data dir>\piper\voices (handy when the app folder is read-only)
+  const dirs = [...new Set([path.join(CONFIG.piper.dir, CONFIG.piper.voicesSub), path.join(DATA, 'piper', CONFIG.piper.voicesSub)])], out = new Map();
+  for (const d of dirs) {
+    let files = []; try { files = fs.readdirSync(d); } catch (e) { continue; }
+    for (const f of files.filter(f => f.endsWith('.onnx'))) {
+      const id = f.slice(0, -5), model = path.join(d, f), cfgFile = model + '.json';
+      if (out.has(id) || !fs.existsSync(cfgFile)) continue; // a voice needs both files
+      let c = {}; try { c = JSON.parse(fs.readFileSync(cfgFile, 'utf8')); } catch (e) { continue; }
+      const m = id.match(/^([a-z]{2,3}_[A-Z]{2})-(.+)-(x_low|low|medium|high)$/);
+      out.set(id, { id, model, name: (m ? m[2] : c.dataset || id).replace(/_/g, ' '), lang: (c.language && c.language.code) || (m && m[1]) || '',
+        quality: (c.audio && c.audio.quality) || (m && m[3]) || '', speakers: c.num_speakers || 1 });
+    }
+  }
+  return [...out.values()];
+}
+function ttsStatus() {
+  const exe = piperExe(), voices = piperVoices();
+  const reason = !exe ? `Piper not found: put ${CONFIG.piper.exe} in ${CONFIG.piper.dir}` : !voices.length ? `no Piper voices in ${path.join(CONFIG.piper.dir, CONFIG.piper.voicesSub)}` : null;
+  return { ok: !reason, reason, voices: voices.map(({ model, ...v }) => v) };
+}
+
+// Disk cache, keyed by a hash of voice + settings + text. Size-capped; least recently used clips go first.
+fs.mkdirSync(TTS.cacheDir, { recursive: true });
+for (const f of fs.readdirSync(TTS.cacheDir)) {
+  const p = path.join(TTS.cacheDir, f);
+  if (!f.endsWith('.wav')) { if (f.endsWith('.tmp')) fs.rmSync(p, { force: true }); continue; }
+  try { const s = fs.statSync(p); TTS.files.set(f, { size: s.size, used: s.mtimeMs }); TTS.bytes += s.size; } catch (e) {}
+}
+function trimCache() {
+  const cap = CONFIG.piper.cacheMB * 1048576;
+  if (TTS.bytes <= cap) return;
+  for (const [f, m] of [...TTS.files].sort((a, b) => a[1].used - b[1].used)) {
+    if (TTS.bytes <= cap * 0.9) break;
+    fs.rmSync(path.join(TTS.cacheDir, f), { force: true }); TTS.files.delete(f); TTS.bytes -= m.size;
+  }
+}
+function runPiper(voice, text, s, out) { // one Piper process per sentence: text on stdin, WAV written to a temp file
+  return new Promise((resolve, reject) => {
+    const exe = piperExe(), tmp = out + '.' + process.pid + '.' + Date.now() + '.tmp';
+    const p = spawn(exe, ['--model', voice.model, '--output_file', tmp, '--length_scale', String(s.length),
+      '--noise_scale', String(s.noise), '--noise_w', String(s.noiseW), '--sentence_silence', '0', '--quiet'],
+      { cwd: path.dirname(exe), windowsHide: true, stdio: ['pipe', 'ignore', 'pipe'] });
+    let err = '', done = false;
+    const finish = e => { if (done) return; done = true; clearTimeout(timer); if (e) { fs.rmSync(tmp, { force: true }); reject(e); } else resolve(tmp); };
+    const timer = setTimeout(() => { p.kill(); finish(new Error(`Piper took longer than ${CONFIG.piper.timeoutMs / 1000} s`)); }, CONFIG.piper.timeoutMs);
+    p.stderr.on('data', d => { err = (err + d).slice(-600); });
+    p.on('error', e => finish(new Error(e.code === 'ENOENT' ? 'Piper could not be started (file missing)' : e.code === 'EPERM' || e.code === 'EACCES'
+      ? 'Piper was blocked from starting (antivirus or permissions?)' : 'Piper failed to start: ' + e.message)));
+    p.on('close', (code, sig) => {
+      let ok = false; try { ok = fs.statSync(tmp).size > 44; } catch (e) {}
+      finish(code === 0 && ok ? null : new Error(`Piper ${code === null ? 'crashed (' + sig + ')' : 'exited with code ' + code}${err.trim() ? ': ' + err.trim().split(/\r?\n/).pop() : ''}`));
+    });
+    p.stdin.on('error', () => {}); // Piper died before reading: reported by 'close'
+    p.stdin.end(text.replace(/\s+/g, ' ').trim() + '\n', 'utf8');
+  });
+}
+function slot() { return new Promise(r => { if (TTS.running < CONFIG.piper.maxParallel) { TTS.running++; r(); } else TTS.waiting.push(r); }); }
+function release() { const n = TTS.waiting.shift(); if (n) n(); else TTS.running--; }
+async function synth(voice, text, s) { // -> path of the cached WAV
+  const key = crypto.createHash('sha1').update(JSON.stringify([voice.id, fs.statSync(voice.model).size, s.length, s.noise, s.noiseW, text])).digest('hex');
+  const name = key + '.wav', file = path.join(TTS.cacheDir, name), hit = TTS.files.get(name);
+  if (hit && fs.existsSync(file)) { hit.used = Date.now(); fs.utimes(file, new Date(), new Date(), () => {}); return file; }
+  if (TTS.inflight.has(key)) return TTS.inflight.get(key); // the same sentence is already being made (e.g. a preload)
+  const job = (async () => {
+    await slot();
+    try {
+      const tmp = await runPiper(voice, text, s, file);
+      fs.renameSync(tmp, file);
+      const size = fs.statSync(file).size; TTS.files.set(name, { size, used: Date.now() }); TTS.bytes += size; trimCache();
+      return file;
+    } finally { release(); TTS.inflight.delete(key); }
+  })();
+  TTS.inflight.set(key, job);
+  return job;
+}
+async function handleTts(req, res, q) {
+  const fail = (code, error) => { res.writeHead(code, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify({ error })); };
+  const text = (q.get('text') || '').slice(0, CONFIG.piper.maxChars), st = ttsStatus();
+  if (!text.trim()) return fail(400, 'no text');
+  if (!piperExe()) return fail(503, st.reason);
+  const voices = piperVoices(), voice = voices.find(v => v.id === q.get('voice')) || (!q.get('voice') && voices[0]);
+  if (!voice) return fail(404, q.get('voice') ? `voice ${q.get('voice')} is not installed` : st.reason);
+  const clamp = (v, lo, hi, d) => { v = parseFloat(v); return Number.isFinite(v) ? +Math.min(hi, Math.max(lo, v)).toFixed(2) : d; };
+  const speed = clamp(q.get('speed'), 0.5, 2, 1);
+  const s = { length: +(CONFIG.piper.lengthScale / speed).toFixed(3), noise: clamp(q.get('noise'), 0, 1.5, CONFIG.piper.noiseScale), noiseW: clamp(q.get('noisew'), 0, 1.5, CONFIG.piper.noiseW) };
+  try {
+    const file = await synth(voice, text, s);
+    res.writeHead(200, { 'Content-Type': 'audio/wav', 'Cache-Control': 'no-store' }); res.end(fs.readFileSync(file));
+  } catch (e) { console.log('TTS: ' + e.message); fail(500, e.message); }
+}
+
 const json = (res, obj) => { res.writeHead(200, { 'Content-Type': 'application/json', 'Cache-Control': 'no-store' }); res.end(JSON.stringify(obj)); };
-http.createServer((req, res) => {
+const server = http.createServer((req, res) => {
   const url = req.url.split('?')[0], tr = url.match(/^\/trace\/([\w-]+)$/);
+  if (url === '/tts/voices') return json(res, ttsStatus());
+  if (url === '/tts') return handleTts(req, res, new URL(req.url, 'http://x').searchParams);
   if (url === '/traces') return json(res, [...traceIndex.values()].sort((a, b) => b.recordedAt.localeCompare(a.recordedAt)));
   if (tr) {
     const f = path.join(TRACE_DIR, tr[1] + '.json');
@@ -65,7 +204,14 @@ http.createServer((req, res) => {
     res.writeHead(200, { 'Content-Type': 'text/html; charset=utf-8' });
     res.end(fs.readFileSync(path.join(__dirname, 'index.html')));
   }
-}).listen(HTTP_PORT, () => console.log(`Dashboard: http://localhost:${HTTP_PORT}  (${DEMO ? 'DEMO data -> ' + path.basename(CSV) : 'listening for game on UDP ' + UDP_PORT})`));
+});
+server.on('error', e => fatal('http', HTTP_PORT, e));
+server.listen(HTTP_PORT, () => {
+  const t = ttsStatus();
+  console.log(`Dashboard: http://localhost:${HTTP_PORT}  (${DEMO ? 'DEMO data -> ' + CSV : 'listening for game on UDP ' + UDP_PORT})`);
+  console.log(t.ok ? `Engineer voice: Piper with ${t.voices.length} voice(s): ${t.voices.map(v => v.id).join(', ')}` : `Engineer voice: browser speech (${t.reason})`);
+  ready();
+});
 
 // ---- CSV ----
 function ensureCsv() {
@@ -369,5 +515,13 @@ if (DEMO) {
     if (id === 6) parseTelemetry(b); else if (id === 2) parseLap(b); else if (id === 10) parseDamage(b); else if (id === 1) parseSession(b); else if (id === 0) parseMotion(b); else if (id === 4) parseParticipants(b); else if (id === 7) parseStatus(b);
     push();
   });
-  sock.bind(UDP_PORT);
+  sock.on('error', e => fatal('udp', UDP_PORT, e));
+  sock.bind(UDP_PORT, ready);
 }
+if (DEMO) ready(); // no UDP socket in demo mode
+
+// Clean shutdown (Ctrl+C, or the desktop app quitting)
+function shutdown() { try { server.close(); } catch (e) {} clients.forEach(r => { try { r.end(); } catch (e) {} }); setTimeout(() => process.exit(0), 50); }
+process.on('SIGINT', shutdown); process.on('SIGTERM', shutdown);
+if (process.parentPort) process.parentPort.on('message', e => { if (e.data && e.data.type === 'quit') shutdown(); });
+else if (process.send) process.on('message', m => { if (m && m.type === 'quit') shutdown(); });

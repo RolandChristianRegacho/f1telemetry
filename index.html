@@ -50,6 +50,14 @@ option,optgroup{text-transform:none;background:var(--panel);color:var(--text)}
 .ctl{display:flex;align-items:center;gap:6px;padding:0 12px;border-right:1px solid var(--line)}
 #engVoice{max-width:140px}#engVol{width:64px;accent-color:var(--g1)}
 #engBtn.on{background:var(--g1);border-color:var(--g1);color:#0b0b0b}
+#engCtl{position:relative}#engSet{padding:2px 6px;font-size:10px}#engSet.on{border-color:var(--g1);color:var(--g1)}
+#engPanel{position:absolute;top:100%;right:0;z-index:60;width:250px;margin-top:4px;padding:10px 12px;background:var(--panel,var(--bg));border:1px solid var(--line);border-top:2px solid var(--g1);box-shadow:0 8px 24px rgba(0,0,0,.45);display:flex;flex-direction:column;gap:8px}
+#engPanel[hidden]{display:none}
+#engPanel label{display:grid;grid-template-columns:1fr 70px 40px;align-items:center;gap:6px;font:600 9.5px var(--sans);letter-spacing:.14em;color:var(--dim);text-transform:uppercase}
+#engPanel input{width:100%;accent-color:var(--g1)}#engPanel output{font:11px var(--mono);color:var(--text);text-align:right}
+#engStat{font:11px/1.4 var(--sans);color:var(--dim);white-space:normal}#engStat b{color:var(--text);font-weight:600}
+#engTest{align-self:flex-start;padding:2px 8px;font-size:10px}
+#engCap .note{display:block;margin-top:3px;font:10.5px var(--sans);color:var(--warn)}
 /* Track status uses fixed FIA flag colours: never themed */
 .flag{display:inline-block;padding:1px 8px;border-radius:2px;font:700 12px/1.45 var(--cond)!important;letter-spacing:.12em!important;background:#00b050;color:#ffffff}
 .flag.sc,.flag.vsc{background:#ffd400;color:#111111;animation:blink 1s steps(2) infinite}.flag.form{background:#1e88ff;color:#ffffff}
@@ -208,7 +216,13 @@ table.tt{width:100%;border-collapse:collapse;font:12px var(--mono);font-variant-
   <div class="hc opt"><small>Session time</small><b id="hEl">00:00:00</b></div>
   <div class="sp"></div>
   <div class="ctl"><span class="k">Livery</span><select id="themeSel" title="Team theme"><option value="default">Pit wall (default)</option><option value="rb">Red Bull Racing</option><option value="ferrari">Ferrari</option><option value="mclaren">McLaren</option><option value="merc">Mercedes</option><option value="aston">Aston Martin</option><option value="alpine">Alpine</option><option value="williams">Williams</option><option value="vcarb">Racing Bulls</option><option value="sauber">Kick Sauber</option><option value="haas">Haas</option></select></div>
-  <div class="ctl" id="engCtl"><button id="engBtn">Radio off</button><select id="engVoice" title="Engineer voice"></select><input id="engVol" type="range" min="0" max="1" step="0.05" value="0.9" title="Radio volume"></div>
+  <div class="ctl" id="engCtl"><button id="engBtn">Radio off</button><select id="engVoice" title="Engineer voice"></select><input id="engVol" type="range" min="0" max="1" step="0.05" value="0.9" title="Radio volume"><button id="engSet" title="Radio settings" aria-expanded="false">FX</button>
+    <div id="engPanel" hidden>
+      <label><span>Radio effect</span><input id="engFx" type="range" min="0" max="1" step="0.05" value="0.6"><output id="engFxV">0.60</output></label>
+      <label><span>Speaking speed</span><input id="engSpd" type="range" min="0.7" max="1.4" step="0.05" value="1"><output id="engSpdV">1.00×</output></label>
+      <div id="engStat">Checking local voice engine…</div>
+      <button id="engTest">Test radio</button>
+    </div></div>
   <div class="hc"><small>Link · <span id="hHz">0 Hz</span></small><span id="status">Waiting</span></div>
   <div class="hc opt"><small>Local</small><b id="hClock">--:--:--</b></div>
 </header>
@@ -960,45 +974,167 @@ const sayTime = ms => { const m = Math.floor(ms / 60000), s = (ms % 60000) / 100
 const sayDelta = ms => { const a = Math.abs(ms); return `${ms < 0 ? 'minus' : 'plus'} ${a >= 1000 ? Math.floor(a / 1000) + ' ' : ''}point ${digits(String(Math.floor((a % 1000) / 10)).padStart(2, '0'))}`; };
 const sayLoss = ms => ms >= 95 ? `${Math.round(ms / 100)} tenth${Math.round(ms / 100) > 1 ? 's' : ''}` : `${Math.max(1, Math.round(ms / 10))} hundredths`;
 
-const Eng = { on: false, voice: null, vol: 0.9, q: [], speaking: false, last: null, uid: null, lap: 0, wear: 0, str: 0 };
-let AC;
-function squelch(len) { // radio key-up / key-down noise burst
-  if (!AC) return;
+// ---- Engineer voice: a local Piper neural voice through a team-radio effect, or the browser's speech as a fallback ----
+const store = { get: (k, d) => { try { const v = localStorage.getItem(k); return v === null ? d : v; } catch (e) { return d; } },
+  set: (k, v) => { try { localStorage.setItem(k, v); } catch (e) {} } };
+const Eng = { on: false, voice: null, vol: +store.get('f1-vol', 0.9), q: [], speaking: false, last: null, uid: null, lap: 0, wear: 0, str: 0,
+  sel: store.get('f1-voice', ''), fx: +store.get('f1-fx', 0.6), speed: +store.get('f1-speed', 1),
+  piper: { ok: false, reason: 'checking…', voices: [] }, piperDown: 0, piperWhy: '', msg: 0, src: null, bufs: new Map() };
+let AC, FX;
+const capSet = (text, note) => { const c = $('engCap'); c.textContent = text; if (note) { const s = document.createElement('span'); s.className = 'note'; s.textContent = note; c.appendChild(s); } };
+function audioInit() { // the AudioContext needs a user gesture in a normal browser (not in the desktop app)
+  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); if (AC.state === 'suspended') AC.resume(); } catch (e) { AC = null; }
+  if (AC && !FX) FX = buildFx();
+}
+['pointerdown', 'keydown'].forEach(t => addEventListener(t, () => { if (Eng.on) audioInit(); }, { capture: true }));
+
+// Effect chain: voice -> dry ----------------------------------------------------\
+//                     -> high-pass 400 -> low-pass 3200 -> waveshaper -> compressor -> wet --> master (volume) -> speakers
+//                        crackle bed (looped noise) ---------------------------------------/
+function buildFx() {
+  const g = v => { const n = AC.createGain(); n.gain.value = v; return n; };
+  const input = g(1), dry = g(1), wet = g(0), master = g(Eng.vol), crackle = g(0);
+  const hp = AC.createBiquadFilter(), lp = AC.createBiquadFilter(), shaper = AC.createWaveShaper(), comp = AC.createDynamicsCompressor();
+  hp.type = 'highpass'; hp.frequency.value = 400; hp.Q.value = 0.8; lp.type = 'lowpass'; lp.frequency.value = 3200; lp.Q.value = 0.9;
+  shaper.oversample = '2x'; comp.threshold.value = -24; comp.knee.value = 12; comp.ratio.value = 4; comp.attack.value = 0.003; comp.release.value = 0.15;
+  input.connect(dry).connect(master); input.connect(hp).connect(lp).connect(shaper).connect(comp).connect(wet).connect(master); master.connect(AC.destination);
+  // crackle bed: soft hiss plus random clicks, band-limited like the voice, looped
+  const n = AC.sampleRate * 2, buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0);
+  for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * 0.25 + (Math.random() < 0.0009 ? (Math.random() * 2 - 1) * 2.5 : 0);
+  const src = AC.createBufferSource(), bp = AC.createBiquadFilter(); bp.type = 'bandpass'; bp.frequency.value = 1800; bp.Q.value = 0.6;
+  src.buffer = buf; src.loop = true; src.connect(bp).connect(crackle).connect(master); src.start();
+  const f = { input, dry, wet, master, crackle, shaper };
+  setFx(f); return f;
+}
+function setFx(f = FX) { // 0 = clean voice, 1 = heavy radio
+  if (!f) return;
+  const x = Eng.fx, k = 1 + x * 30, n = 1024, c = new Float32Array(n), t = AC.currentTime;
+  for (let i = 0; i < n; i++) { const v = i / (n - 1) * 2 - 1; c[i] = Math.tanh(k * v) / Math.tanh(k); } // soft clipping, harder with x
+  f.shaper.curve = c;
+  f.dry.gain.setTargetAtTime(Math.cos(x * Math.PI / 2), t, 0.03); f.wet.gain.setTargetAtTime(Math.sin(x * Math.PI / 2) * (1.6 - x * 0.7), t, 0.03);
+  f.master.gain.setTargetAtTime(Eng.vol, t, 0.03);
+}
+const bed = on => { if (FX) FX.crackle.gain.setTargetAtTime(on ? 0.05 * Eng.fx : 0, AC.currentTime, on ? 0.05 : 0.12); };
+function squelch(len) { // radio key-up / key-down noise burst (scaled by the effect strength: none on a clean voice)
+  if (!AC || Eng.fx <= 0.02) return;
   const n = Math.floor(AC.sampleRate * len), buf = AC.createBuffer(1, n, AC.sampleRate), d = buf.getChannelData(0);
   for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
   const src = AC.createBufferSource(), f = AC.createBiquadFilter(), g = AC.createGain();
-  f.type = 'bandpass'; f.frequency.value = 2200; g.gain.value = 0.25 * Eng.vol; src.buffer = buf; src.connect(f).connect(g).connect(AC.destination); src.start();
+  f.type = 'bandpass'; f.frequency.value = 2200; g.gain.value = 0.25 * Eng.vol * Math.min(1, 0.3 + Eng.fx); src.buffer = buf; src.connect(f).connect(g).connect(AC.destination); src.start();
 }
-function speak(m) {
-  Eng.speaking = true; $('engCap').textContent = m.cap; logEv('RADIO', m.cap, 'radio'); squelch(0.12);
-  const next = i => {
-    if (i >= m.parts.length || !Eng.on) { squelch(0.08); Eng.speaking = false; return; }
-    const u = new SpeechSynthesisUtterance(m.parts[i]); // one sentence at a time (long utterances get cut off by Chrome)
-    if (Eng.voice) { u.voice = Eng.voice; u.lang = Eng.voice.lang; } else u.lang = 'en-GB';
-    u.rate = 1.08; u.pitch = 0.9; u.volume = Eng.vol; u.onend = u.onerror = () => next(i + 1); speechSynthesis.speak(u);
-  };
-  setTimeout(() => next(0), 200);
+
+// Piper: one sentence per request, decoded with Web Audio; the next sentence is fetched while the current one plays
+const piperId = () => Eng.sel.startsWith('piper:') ? Eng.sel.slice(6) : null;
+function piperBuf(text) {
+  const id = piperId(), key = `${id}|${Eng.speed}|${text}`;
+  if (Eng.bufs.has(key)) { const p = Eng.bufs.get(key); Eng.bufs.delete(key); Eng.bufs.set(key, p); return p; } // keep recently used last
+  const p = (async () => {
+    const r = await fetch(`/tts?voice=${encodeURIComponent(id)}&speed=${Eng.speed}&text=${encodeURIComponent(text)}`);
+    if (!r.ok) { let why = `HTTP ${r.status}`; try { why = (await r.json()).error || why; } catch (e) {} throw new Error(why); }
+    return await AC.decodeAudioData(await r.arrayBuffer());
+  })();
+  p.catch(() => Eng.bufs.delete(key));
+  Eng.bufs.set(key, p); if (Eng.bufs.size > 80) Eng.bufs.delete(Eng.bufs.keys().next().value);
+  return p;
 }
+function play(buf, msg) {
+  return new Promise(res => {
+    if (msg !== Eng.msg) return res();
+    const s = AC.createBufferSource(); s.buffer = buf; s.connect(FX.input); Eng.src = s;
+    const end = () => { clearTimeout(t); if (Eng.src === s) Eng.src = null; res(); }, t = setTimeout(end, buf.duration * 1000 + 1500); // never hang the queue
+    s.onended = end; s.start();
+  });
+}
+function webSay(text, done) { // browser speech, one sentence at a time (long utterances get cut off by Chrome)
+  if (!('speechSynthesis' in window)) return setTimeout(done, 1500);
+  const u = new SpeechSynthesisUtterance(text);
+  if (Eng.voice) { u.voice = Eng.voice; u.lang = Eng.voice.lang; } else u.lang = 'en-GB';
+  u.rate = 1.08 * Eng.speed; u.pitch = 0.9; u.volume = Eng.vol; u.onend = u.onerror = done; speechSynthesis.speak(u);
+}
+const webSayP = text => new Promise(r => webSay(text, r));
+function usePiper() { // why the browser voice is being used instead, or null if Piper should be tried
+  if (!piperId()) return 'browser voice selected';
+  if (!AC || !FX || AC.state !== 'running') return 'audio not enabled yet, click the page once';
+  if (!Eng.piper.ok) return 'Piper unavailable: ' + Eng.piper.reason;
+  if (!Eng.piper.voices.some(v => v.id === piperId())) return `Piper voice ${piperId()} is not installed`;
+  if (Date.now() < Eng.piperDown) return 'Piper failed: ' + Eng.piperWhy;
+  return null;
+}
+async function speak(m) {
+  const id = ++Eng.msg; Eng.speaking = true; logEv('RADIO', m.cap, 'radio');
+  let why = null; const fallbackNote = w => piperId() ? `${w}, using the browser voice.` : null;
+  audioInit(); bed(true); squelch(0.12);
+  await new Promise(r => setTimeout(r, 200));
+  why = usePiper(); capSet(m.cap, why && fallbackNote(why)); // re-checked: the audio may have just been resumed
+  for (let i = 0; i < m.parts.length && Eng.on && id === Eng.msg; i++) {
+    if (!why) {
+      try {
+        const cur = piperBuf(m.parts[i]); if (m.parts[i + 1]) piperBuf(m.parts[i + 1]).catch(() => {}); // preload the next sentence
+        await play(await cur, id); if (m.parts[i + 1]) await new Promise(r => setTimeout(r, 90));
+        continue;
+      } catch (e) { // Piper failed: browser voice for the rest of this message, and for 30 s
+        Eng.piperDown = Date.now() + 30000; Eng.piperWhy = e.message; why = 'Piper failed: ' + e.message; capSet(m.cap, fallbackNote(why)); engStat();
+      }
+    }
+    await webSayP(m.parts[i]);
+  }
+  if (id !== Eng.msg) return;
+  bed(false); squelch(0.08); Eng.speaking = false;
+}
+function hush() { Eng.msg++; Eng.q = []; Eng.speaking = false; if (Eng.src) { try { Eng.src.stop(); } catch (e) {} Eng.src = null; } bed(false); if ('speechSynthesis' in window) speechSynthesis.cancel(); }
 const say = (parts, cap, urgent) => { if (Eng.on) Eng.q.push({ parts, cap: cap || parts[0], urgent, exp: Date.now() + 40000 }); };
 
+// Voice picker: Piper voices first (from /tts/voices), then the browser's English voices
+const esc = s => String(s).replace(/[&<>"]/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;' })[c]);
 function fillVoices() {
-  if (!('speechSynthesis' in window)) return;
-  const vs = speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)), sel = $('engVoice');
-  const saved = (() => { try { return localStorage.getItem('f1-voice'); } catch (e) { return null; } })();
-  sel.innerHTML = vs.map(v => `<option value="${v.name}">${v.name}</option>`).join('');
-  const pick = vs.find(v => v.name === saved) || vs.find(v => /ryan|george|daniel|uk english male/i.test(v.name)) || vs.find(v => v.lang === 'en-GB') || vs[0];
-  if (pick) { sel.value = pick.name; Eng.voice = pick; }
+  const sel = $('engVoice'), web = 'speechSynthesis' in window ? speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)) : [];
+  const pv = Eng.piper.voices, opts = [];
+  if (pv.length) opts.push(`<optgroup label="Local neural (Piper)">${pv.map(v => `<option value="piper:${esc(v.id)}" title="${esc(v.id)}">${esc(v.name.replace(/\b\w/g, c => c.toUpperCase()))} (${esc(v.lang.replace('_', '-'))})</option>`).join('')}</optgroup>`);
+  if (web.length) opts.push(`<optgroup label="Browser voices">${web.map(v => `<option value="web:${esc(v.name)}">${esc(v.name)}</option>`).join('')}</optgroup>`);
+  sel.innerHTML = opts.join('');
+  let pick = Eng.sel && !Eng.sel.includes(':') ? 'web:' + Eng.sel : Eng.sel; // older saved value = a browser voice name
+  const has = v => [...sel.options].some(o => o.value === v);
+  const ukMale = web.find(v => /ryan|george|daniel|uk english male/i.test(v.name)) || web.find(v => v.lang === 'en-GB') || web[0];
+  const bestPiper = pv.find(v => /alan|northern_english_male/.test(v.id)) || pv.find(v => /^en_GB/.test(v.id)) || pv[0];
+  if (!has(pick)) pick = bestPiper ? 'piper:' + bestPiper.id : ukMale ? 'web:' + ukMale.name : null;
+  if (pick) { sel.value = pick; Eng.sel = pick; }
+  Eng.voice = web.find(v => 'web:' + v.name === Eng.sel) || ukMale || null; // the browser voice, also used as Piper's fallback
+  engStat();
 }
-if ('speechSynthesis' in window) { speechSynthesis.onvoiceschanged = fillVoices; fillVoices(); }
-$('engVoice').onchange = e => { Eng.voice = speechSynthesis.getVoices().find(v => v.name === e.target.value) || null; try { localStorage.setItem('f1-voice', e.target.value); } catch (err) {} say(['Radio check, how do you hear me?']); };
-$('engVol').oninput = e => { Eng.vol = +e.target.value; };
-$('engBtn').onclick = () => {
-  Eng.on = !Eng.on; $('engBtn').classList.toggle('on', Eng.on); $('engBtn').textContent = 'Radio ' + (Eng.on ? 'on' : 'off');
-  if (!Eng.on) { Eng.q = []; Eng.speaking = false; if ('speechSynthesis' in window) speechSynthesis.cancel(); $('engCap').textContent = 'radio off. Switch it on in the top bar.'; return; }
-  try { AC = AC || new (window.AudioContext || window.webkitAudioContext)(); AC.resume(); } catch (e) {}
-  if (!('speechSynthesis' in window)) { $('engCap').textContent = 'this browser has no speech synthesis, captions only.'; return; }
-  say(['Radio check, how do you hear me?'], 'Radio check, how do you hear me?', true);
-};
+function engStat() {
+  const p = Eng.piper, why = usePiper();
+  $('engStat').innerHTML = p.ok ? `Piper: <b>${p.voices.length} voice${p.voices.length > 1 ? 's' : ''}</b> installed.` + (why && piperId() ? ` Now: ${esc(why)}.` : piperId() ? ' Speaking with Piper.' : ' A browser voice is selected.')
+    : `Piper: <b>not available</b> (${esc(p.reason)}). Using the browser voice; the radio effect only applies to Piper voices.`;
+}
+async function loadPiper() {
+  try { const r = await fetch('/tts/voices', { cache: 'no-store' }); Eng.piper = r.ok ? await r.json() : { ok: false, reason: `server has no /tts (HTTP ${r.status})`, voices: [] }; }
+  catch (e) { Eng.piper = { ok: false, reason: 'server not reachable', voices: [] }; }
+  fillVoices();
+}
+if ('speechSynthesis' in window) speechSynthesis.onvoiceschanged = fillVoices;
+loadPiper();
+
+$('engVoice').onchange = e => { Eng.sel = e.target.value; Eng.piperDown = 0; store.set('f1-voice', Eng.sel); fillVoices(); hush(); say(['Radio check, how do you hear me?'], null, true); };
+$('engVol').value = Eng.vol; $('engVol').oninput = e => { Eng.vol = +e.target.value; store.set('f1-vol', Eng.vol); setFx(); };
+const showFx = () => { $('engFx').value = Eng.fx; $('engFxV').textContent = Eng.fx.toFixed(2); $('engSpd').value = Eng.speed; $('engSpdV').textContent = Eng.speed.toFixed(2) + '×'; };
+$('engFx').oninput = e => { Eng.fx = +e.target.value; store.set('f1-fx', Eng.fx); showFx(); setFx(); };
+$('engSpd').oninput = e => { Eng.speed = +e.target.value; showFx(); };
+$('engSpd').onchange = () => store.set('f1-speed', Eng.speed);
+showFx();
+$('engSet').onclick = e => { e.stopPropagation(); const p = $('engPanel'); p.hidden = !p.hidden; $('engSet').classList.toggle('on', !p.hidden); $('engSet').setAttribute('aria-expanded', !p.hidden); if (!p.hidden) loadPiper(); };
+document.addEventListener('click', e => { if (!$('engPanel').hidden && !$('engCtl').contains(e.target)) { $('engPanel').hidden = true; $('engSet').classList.remove('on'); } });
+$('engTest').onclick = () => { if (!Eng.on) $('engBtn').click(); else { hush(); say(['Radio check.', 'Box this lap, box this lap.'], 'Radio check. Box this lap.', true); } };
+function setRadio(on, quiet) {
+  Eng.on = on; store.set('f1-radio', on ? '1' : '0'); $('engBtn').classList.toggle('on', on); $('engBtn').textContent = 'Radio ' + (on ? 'on' : 'off');
+  if (!on) { hush(); capSet('radio off. Switch it on in the top bar.'); return; }
+  audioInit();
+  if (!usePiper()) { if (!quiet) say(['Radio check, how do you hear me?'], 'Radio check, how do you hear me?', true); return; }
+  if (!('speechSynthesis' in window) && !Eng.piper.ok) { capSet('this browser has no speech synthesis, captions only.'); return; }
+  if (!quiet) say(['Radio check, how do you hear me?'], 'Radio check, how do you hear me?', true);
+  else capSet('radio on.', AC && AC.state === 'running' ? null : 'Click anywhere on the page to enable audio.');
+}
+$('engBtn').onclick = () => setRadio(!Eng.on);
+if (store.get('f1-radio', '0') === '1') setRadio(true, true); // remembered; the desktop app can start audio without a click
 
 function renderCorners(rows, head) {
   $('cornHead').textContent = head || 'Time lost last lap: finish a lap to see where you lose time.';

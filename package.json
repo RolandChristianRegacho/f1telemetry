@@ -1,0 +1,42 @@
+{
+  "name": "f1-telemetry",
+  "productName": "F1 Telemetry",
+  "version": "1.0.0",
+  "description": "F1 25 UDP telemetry dashboard with a race engineer",
+  "main": "main.js",
+  "author": "Roland Regacho",
+  "private": true,
+  "scripts": {
+    "start": "electron .",
+    "start:demo": "electron . --demo",
+    "web": "node server.js",
+    "web:demo": "node server.js --demo",
+    "dist": "electron-builder --win nsis portable",
+    "dist:dir": "electron-builder --win dir"
+  },
+  "devDependencies": {
+    "electron": "^44.9.2",
+    "electron-builder": "^26.15.3"
+  },
+  "build": {
+    "appId": "ph.regacho.f1telemetry",
+    "productName": "F1 Telemetry",
+    "copyright": "Roland Regacho",
+    "directories": { "output": "dist", "buildResources": "build" },
+    "files": ["main.js", "server.js", "index.html", "package.json", "build/icon.png"],
+    "extraResources": [{ "from": "piper", "to": "piper", "filter": ["**/*"] }],
+    "win": {
+      "icon": "build/icon.png",
+      "target": [{ "target": "nsis", "arch": ["x64"] }, { "target": "portable", "arch": ["x64"] }]
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "shortcutName": "F1 Telemetry",
+      "artifactName": "F1-Telemetry-Setup-${version}.${ext}"
+    },
+    "portable": { "artifactName": "F1-Telemetry-${version}-portable.${ext}" }
+  }
+}
